@@ -1,6 +1,6 @@
-# foltia
+# foltia Command Line Tool
 
-A Command Line Tool for foltia ANIME LOCKER.
+A Command Line Tool for [foltia ANIME LOCKER](https://foltia.com/ANILOC/).
 
 ## License
 
