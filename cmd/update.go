@@ -282,7 +282,7 @@ func getVideoFile() ([]animeFileInfo, error) {
 			var afi animeFileInfo
 			afi.TID = d.TID
 			afi.Title = d.Title
-			e := strings.Trim(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(2)", i+1)).Text(), "話数：")
+			e := strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(2)", i+1)).Text(), "話数：")
 			if e == "[話数]" {
 				e = "-1"
 			}
@@ -290,14 +290,14 @@ func getVideoFile() ([]animeFileInfo, error) {
 			if err != nil {
 				return []animeFileInfo{}, err
 			}
-			afi.EpTitle = strings.TrimSpace(strings.Trim(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(3)", i+1)).Text(), "サブタイトル："))
-			t := strings.TrimSpace(strings.Trim(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(4)", i+1)).Text(), "録画日時："))
+			afi.EpTitle = strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(3)", i+1)).Text(), "サブタイトル："))
+			t := strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(4)", i+1)).Text(), "録画日時："))
 			afi.Time, err = time.ParseInLocation("2006/01/02 15:04", strings.Split(t, "(")[0]+strings.Split(t, ")")[1], loc)
 			if err != nil {
 				return []animeFileInfo{}, err
 			}
-			afi.Station = strings.TrimSpace(strings.Trim(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(5)", i+1)).Text(), "放送局："))
-			status := strings.TrimSpace(strings.Trim(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(6)", i+1)).Text(), "ステータス："))
+			afi.Station = strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(5)", i+1)).Text(), "放送局："))
+			status := strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(6)", i+1)).Text(), "ステータス："))
 			if status != "完了" {
 				continue
 			}
@@ -315,7 +315,7 @@ func getVideoFile() ([]animeFileInfo, error) {
 			if !exists {
 				return []animeFileInfo{}, fmt.Errorf("PID not found")
 			}
-			afi.PID, err = strconv.Atoi(strings.Trim(p, "./selectcaptureimage.php?pid="))
+			afi.PID, err = strconv.Atoi(strings.TrimPrefix(p, "./selectcaptureimage.php?pid="))
 			if err != nil {
 				return []animeFileInfo{}, err
 			}
