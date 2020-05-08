@@ -17,6 +17,7 @@ limitations under the License.
 package db
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/jinzhu/gorm"
@@ -27,8 +28,28 @@ import (
 //AnimeTitle is a struct of anime title
 type AnimeTitle struct {
 	gorm.Model
-	TID   int
-	Title string
+	TID       int
+	Title     string
+	TitleYomi string
+	Year      int
+	Active    bool
+}
+type AnimeTitleList []AnimeTitle
+
+func (a AnimeTitleList) Len() int {
+	return len(a)
+}
+
+func (a AnimeTitleList) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func (a AnimeTitleList) Less(i, j int) bool {
+	return a[i].TID < a[j].TID
+}
+
+func (a AnimeTitle) String() string {
+	return fmt.Sprintf("%d : %s (%d)", a.TID, a.Title, a.Year)
 }
 
 // InitTitleDB : Initialize Title DB
@@ -48,7 +69,7 @@ func InitTitleDB() error {
 }
 
 // InsertTitle : Insert Data to Title DB
-func InsertTitle(tid int, title string) error {
+func InsertTitle(tid int, title string, yomi string, year int, active bool) error {
 	home, err := homedir.Dir()
 	if err != nil {
 		return err
@@ -59,12 +80,12 @@ func InsertTitle(tid int, title string) error {
 	if err != nil {
 		return err
 	}
-	db.Create(&AnimeTitle{TID: tid, Title: title})
+	db.Create(&AnimeTitle{TID: tid, Title: title, TitleYomi: yomi, Year: year, Active: active})
 	return nil
 }
 
 // UpdateTitle : Update Data of Title DB
-func UpdateTitle(id uint, tid int, title string) error {
+func UpdateTitle(id uint, tid int, title string, yomi string, year int, active bool) error {
 	home, err := homedir.Dir()
 	if err != nil {
 		return err
@@ -79,6 +100,9 @@ func UpdateTitle(id uint, tid int, title string) error {
 	db.First(&t, id)
 	t.TID = tid
 	t.Title = title
+	t.TitleYomi = yomi
+	t.Year = year
+	t.Active = active
 	db.Save(&t)
 	return nil
 }
@@ -102,18 +126,18 @@ func DeleteTitle(id uint) error {
 }
 
 // GetAllTitle : Get All Data from Title DB
-func GetAllTitle() ([]AnimeTitle, error) {
+func GetAllTitle() (AnimeTitleList, error) {
 	home, err := homedir.Dir()
 	if err != nil {
-		return []AnimeTitle{}, err
+		return AnimeTitleList{}, err
 	}
 	dbPath := filepath.Join(home, ".config", "foltia", "foltia_title.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
-		return []AnimeTitle{}, err
+		return AnimeTitleList{}, err
 	}
-	var tl []AnimeTitle
+	var tl AnimeTitleList
 	db.Order("created_at desc").Find(&tl)
 	return tl, nil
 }

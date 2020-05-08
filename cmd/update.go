@@ -32,6 +32,8 @@ import (
 type animeTitleInfo struct {
 	TID   int
 	Title string
+	Yomi  string
+	Year  int
 }
 
 type animeFileInfo struct {
@@ -52,7 +54,7 @@ var barTemp = `{{counters .}} {{bar . "|" "=" ">" "_" "|"}} {{ speed .}} {{perce
 // updateCmd represents the update command
 var updateCmd = &cobra.Command{
 	Use:   "update",
-	Short: "Update Local DB",
+	Short: "Update local DB",
 	Run: func(cmd *cobra.Command, args []string) {
 		updateDB()
 	},
@@ -60,16 +62,6 @@ var updateCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(updateCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// updateCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// updateCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 func updateDB() {
@@ -78,6 +70,8 @@ func updateDB() {
 	db.InitTitleDB()
 	db.InitEpisodeDB()
 	db.InitVideoFileDB()
+
+	log.Println("Start update anime title")
 	atil, err := getAnimeTitleInfo()
 	if err != nil {
 		log.Fatalln(err)
@@ -86,6 +80,11 @@ func updateDB() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	err = activateAnimeTitle()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	log.Println("Start collecting video file info")
 	afil, err := getVideoFile()
 	if err != nil {
@@ -120,24 +119,61 @@ func updateDB() {
 }
 
 func getAnimeTitleInfo() ([]animeTitleInfo, error) {
-	url := "http://" + conf.fHost + "/recorded/recfiles_tid.php?mode=detail"
+	url := "http://cal.syoboi.jp/db.php?Command=TitleLookup&TID=*"
 	doc, err := goquery.NewDocument(url)
 	if err != nil {
 		return []animeTitleInfo{}, err
 	}
-	var atilist []animeTitleInfo
-	num := doc.Find("#Librarytable > table > tbody").Find("tr").Length()
-	for i := 0; i < num; i++ {
-		var ati animeTitleInfo
-		tid := doc.Find(fmt.Sprintf("#Librarytable > table > tbody > tr:nth-child(%d) > td:nth-child(1) > a", i+1)).Text()
-		ati.TID, err = strconv.Atoi(tid)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		ati.Title = strings.TrimSpace(doc.Find(fmt.Sprintf("#Librarytable > table > tbody > tr:nth-child(%d) > td:nth-child(2) > a", i+1)).Text())
-		atilist = append(atilist, ati)
+	var atil []animeTitleInfo
+	if err != nil {
+		return []animeTitleInfo{}, err
 	}
-	return atilist, nil
+	doc.Find("TitleLookupResponse > TitleItems > TitleItem").Each(func(i int, s *goquery.Selection) {
+		var a animeTitleInfo
+		a.TID, _ = strconv.Atoi(s.Find("TID").Text())
+		a.Title = strings.TrimSpace(s.Find("Title").Text())
+		a.Yomi = strings.TrimSpace(s.Find("TitleYomi").Text())
+		a.Year, _ = strconv.Atoi(s.Find("FirstYear").Text())
+		atil = append(atil, a)
+	})
+	return atil, nil
+}
+
+func activateAnimeTitle() error {
+	url := "http://" + conf.fHost + "/recorded/recfiles_tid.php?mode=detail"
+	doc, err := goquery.NewDocument(url)
+	if err != nil {
+		return err
+	}
+	data, err := db.GetAllTitle()
+	if err != nil {
+		return err
+	}
+	num := doc.Find("#Librarytable > table > tbody").Find("tr").Length()
+	bar := pb.ProgressBarTemplate(barTemp).Start(len(data))
+	for _, d := range data {
+		exists := false
+		for i := 0; i < num; i++ {
+			t := doc.Find(fmt.Sprintf("#Librarytable > table > tbody > tr:nth-child(%d) > td:nth-child(1) > a", i+1)).Text()
+			tid, err := strconv.Atoi(t)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			if tid == d.TID {
+				if !d.Active {
+					db.UpdateTitle(d.ID, d.TID, d.Title, d.TitleYomi, d.Year, true)
+				}
+				exists = true
+				break
+			}
+		}
+		if !exists && d.Active {
+			db.UpdateTitle(d.ID, d.TID, d.Title, d.TitleYomi, d.Year, false)
+		}
+		bar.Increment()
+	}
+	bar.Finish()
+	return nil
 }
 
 func insertNewTitle(atil []animeTitleInfo) error {
@@ -154,7 +190,7 @@ func insertNewTitle(atil []animeTitleInfo) error {
 			}
 		}
 		if !exist {
-			db.InsertTitle(a.TID, a.Title)
+			db.InsertTitle(a.TID, a.Title, a.Yomi, a.Year, false)
 		}
 	}
 	return nil
@@ -272,54 +308,56 @@ func getVideoFile() ([]animeFileInfo, error) {
 	}
 	bar := pb.ProgressBarTemplate(barTemp).Start(len(data))
 	for _, d := range data {
-		url := "http://" + conf.fHost + "/recorded/recfiles_tid.php?mode=detail&tid=" + fmt.Sprintf("%d", d.TID)
-		doc, err := goquery.NewDocument(url)
-		if err != nil {
-			continue
-		}
-		num := doc.Find("#libraryDetail > li").Length()
-		for i := 0; i < num; i++ {
-			var afi animeFileInfo
-			afi.TID = d.TID
-			afi.Title = d.Title
-			e := strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(2)", i+1)).Text(), "話数：")
-			if e == "[話数]" {
-				e = "-1"
-			}
-			afi.EpNum, err = strconv.Atoi(e)
+		if d.Active {
+			url := "http://" + conf.fHost + "/recorded/recfiles_tid.php?mode=detail&tid=" + fmt.Sprintf("%d", d.TID)
+			doc, err := goquery.NewDocument(url)
 			if err != nil {
-				return []animeFileInfo{}, err
-			}
-			afi.EpTitle = strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(3)", i+1)).Text(), "サブタイトル："))
-			t := strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(4)", i+1)).Text(), "録画日時："))
-			afi.Time, err = time.ParseInLocation("2006/01/02 15:04", strings.Split(t, "(")[0]+strings.Split(t, ")")[1], loc)
-			if err != nil {
-				return []animeFileInfo{}, err
-			}
-			afi.Station = strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(5)", i+1)).Text(), "放送局："))
-			status := strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(6)", i+1)).Text(), "ステータス："))
-			if status != "完了" {
 				continue
 			}
-			doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > div > ul.fileType > li", i+1)).Each(func(j int, s *goquery.Selection) {
-				t, _ := s.Attr("class")
-				if t == "mpeg2" {
-					afi.FileTS = strings.TrimSpace(s.Text())
-				} else if t == "mp4HD" {
-					afi.FileMP4HD = strings.TrimSpace(s.Text())
-				} else if t == "mp4SD" {
-					afi.FileMP4SD = strings.TrimSpace(s.Text())
+			num := doc.Find("#libraryDetail > li").Length()
+			for i := 0; i < num; i++ {
+				var afi animeFileInfo
+				afi.TID = d.TID
+				afi.Title = d.Title
+				e := strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(2)", i+1)).Text(), "話数：")
+				if e == "[話数]" {
+					e = "-1"
 				}
-			})
-			p, exists := doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > div > a ", i+1)).Attr("href")
-			if !exists {
-				return []animeFileInfo{}, fmt.Errorf("PID not found")
+				afi.EpNum, err = strconv.Atoi(e)
+				if err != nil {
+					return []animeFileInfo{}, err
+				}
+				afi.EpTitle = strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(3)", i+1)).Text(), "サブタイトル："))
+				t := strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(4)", i+1)).Text(), "録画日時："))
+				afi.Time, err = time.ParseInLocation("2006/01/02 15:04", strings.Split(t, "(")[0]+strings.Split(t, ")")[1], loc)
+				if err != nil {
+					return []animeFileInfo{}, err
+				}
+				afi.Station = strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(5)", i+1)).Text(), "放送局："))
+				status := strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(6)", i+1)).Text(), "ステータス："))
+				if status != "完了" {
+					continue
+				}
+				doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > div > ul.fileType > li", i+1)).Each(func(j int, s *goquery.Selection) {
+					t, _ := s.Attr("class")
+					if t == "mpeg2" {
+						afi.FileTS = strings.TrimSpace(s.Text())
+					} else if t == "mp4HD" {
+						afi.FileMP4HD = strings.TrimSpace(s.Text())
+					} else if t == "mp4SD" {
+						afi.FileMP4SD = strings.TrimSpace(s.Text())
+					}
+				})
+				p, exists := doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > div > a ", i+1)).Attr("href")
+				if !exists {
+					return []animeFileInfo{}, fmt.Errorf("PID not found")
+				}
+				afi.PID, err = strconv.Atoi(strings.TrimPrefix(p, "./selectcaptureimage.php?pid="))
+				if err != nil {
+					return []animeFileInfo{}, err
+				}
+				afil = append(afil, afi)
 			}
-			afi.PID, err = strconv.Atoi(strings.TrimPrefix(p, "./selectcaptureimage.php?pid="))
-			if err != nil {
-				return []animeFileInfo{}, err
-			}
-			afil = append(afil, afi)
 		}
 		bar.Increment()
 	}
