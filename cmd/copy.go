@@ -118,7 +118,6 @@ func copyFiles() error {
 		}
 		for _, e := range ep {
 			if e.TID == f.tid && e.EpNum == f.epNum {
-				log.Println(e.EpTitle)
 				db.UpdateEpisode(e.ID, e.TID, e.EpNum, e.EpTitle, true)
 				break
 			}
