@@ -28,16 +28,22 @@ import (
 )
 
 type config struct {
-	fHost string
-	fPath string
-	cDest string
+	fHost       string
+	fPath       string
+	cDest       string
+	cFilename   string
+	cFiletype   string
+	cDropThresh int
 }
 
 func (c config) String() string {
-	return fmt.Sprintf("foltia_host = \"%s\"\nfoltia_path = \"%s\"\ncopy_dest = \"%s\"",
+	return fmt.Sprintf("foltia_host = \"%s\"\nfoltia_path = \"%s\"\ncopy_dest = \"%s\"\ncopy_filename = \"%s\"\ncopy_filetype = \"%s\"\ncopy_drop_thresh = %d",
 		c.fHost,
 		c.fPath,
 		c.cDest,
+		c.cFilename,
+		c.cFiletype,
+		c.cDropThresh,
 	)
 }
 
@@ -51,9 +57,6 @@ var rootCmd = &cobra.Command{
 	Use:   "foltia",
 	Short: "A Command Line Tool for foltia ANIME LOCKER",
 	Long:  `This is a command line tool for foltia ANIME LOCKER. This tool is made by reeve0930.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -97,4 +100,7 @@ func initConfig() {
 	conf.fHost = viper.GetString("foltia_host")
 	conf.fPath = viper.GetString("foltia_path")
 	conf.cDest = viper.GetString("copy_dest")
+	conf.cFilename = viper.GetString("copy_filename")
+	conf.cFiletype = viper.GetString("copy_filetype")
+	conf.cDropThresh = viper.GetInt("copy_drop_thresh")
 }

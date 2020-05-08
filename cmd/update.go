@@ -18,22 +18,43 @@ package cmd
 
 import (
 	"fmt"
+	"log"
+	"strconv"
+	"strings"
+	"time"
 
+	"github.com/PuerkitoBio/goquery"
+	"github.com/cheggaaa/pb/v3"
+	"github.com/reeve0930/foltia/db"
 	"github.com/spf13/cobra"
 )
+
+type animeTitleInfo struct {
+	TID   int
+	Title string
+}
+
+type animeFileInfo struct {
+	TID       int
+	Title     string
+	EpNum     int
+	PID       int
+	EpTitle   string
+	Time      time.Time
+	Station   string
+	FileTS    string
+	FileMP4HD string
+	FileMP4SD string
+}
+
+var barTemp = `{{counters .}} {{bar . "|" "=" ">" "_" "|"}} {{ speed .}} {{percent .}} {{rtime . "ETA %s"}}`
 
 // updateCmd represents the update command
 var updateCmd = &cobra.Command{
 	Use:   "update",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Update Local DB",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("update called")
+		updateDB()
 	},
 }
 
@@ -49,4 +70,356 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// updateCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func updateDB() {
+	log.Println("Start update local DB")
+
+	db.InitTitleDB()
+	db.InitEpisodeDB()
+	db.InitVideoFileDB()
+	atil, err := getAnimeTitleInfo()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = insertNewTitle(atil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Println("Start collecting video file info")
+	afil, err := getVideoFile()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = removeVideoFile(afil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	/*
+		err = removeEpisode(afil)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		err = removeTitle(atil)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	*/
+	log.Println("Start adding new episode")
+	err = insertNewEpisode(afil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Println("Start adding new video files")
+	err = insertNewVideoFile(afil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	log.Println("Finished update local DB")
+}
+
+func getAnimeTitleInfo() ([]animeTitleInfo, error) {
+	url := "http://" + conf.fHost + "/recorded/recfiles_tid.php?mode=detail"
+	doc, err := goquery.NewDocument(url)
+	if err != nil {
+		return []animeTitleInfo{}, err
+	}
+	var atilist []animeTitleInfo
+	num := doc.Find("#Librarytable > table > tbody").Find("tr").Length()
+	for i := 0; i < num; i++ {
+		var ati animeTitleInfo
+		tid := doc.Find(fmt.Sprintf("#Librarytable > table > tbody > tr:nth-child(%d) > td:nth-child(1) > a", i+1)).Text()
+		ati.TID, err = strconv.Atoi(tid)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		ati.Title = strings.TrimSpace(doc.Find(fmt.Sprintf("#Librarytable > table > tbody > tr:nth-child(%d) > td:nth-child(2) > a", i+1)).Text())
+		atilist = append(atilist, ati)
+	}
+	return atilist, nil
+}
+
+func insertNewTitle(atil []animeTitleInfo) error {
+	data, err := db.GetAllTitle()
+	if err != nil {
+		return err
+	}
+	for _, a := range atil {
+		exist := false
+		for _, d := range data {
+			if a.TID == d.TID {
+				exist = true
+				break
+			}
+		}
+		if !exist {
+			db.InsertTitle(a.TID, a.Title)
+		}
+	}
+	return nil
+}
+
+func removeTitle(atil []animeTitleInfo) error {
+	data, err := db.GetAllTitle()
+	if err != nil {
+		return err
+	}
+	for _, d := range data {
+		exists := false
+		for _, a := range atil {
+			if d.TID == a.TID {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			log.Printf("Remove Title : %s (%d)", d.Title, d.TID)
+			err = db.DeleteTitle(d.ID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func removeEpisode(afil []animeFileInfo) error {
+	data, err := db.GetAllEpisode()
+	if err != nil {
+		return err
+	}
+	for _, d := range data {
+		exists := false
+		for _, a := range afil {
+			if d.TID == a.TID && d.EpNum == a.EpNum {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			title, err := getTitle(d.TID)
+			if err != nil {
+				return err
+			}
+			log.Printf("Remove Episode : %s (%d:%s)", title, d.EpNum, d.EpTitle)
+			err = db.DeleteEpisode(d.ID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func removeVideoFile(afil []animeFileInfo) error {
+	data, err := db.GetAllVideoFile()
+	if err != nil {
+		return err
+	}
+	for _, d := range data {
+		exists := false
+		for _, a := range afil {
+			if d.PID == a.PID {
+				exists = true
+				if d.FileTS != a.FileTS || d.FileMP4HD != a.FileMP4HD || d.FileMP4SD != a.FileMP4SD {
+					log.Printf("Update file info : %s (%d:%s)", a.Title, a.EpNum, a.EpTitle)
+					err = db.UpdateVideoFile(d.ID, d.TID, d.EpNum, d.PID, a.FileTS, a.FileMP4HD, a.FileMP4SD, d.Station, d.Time, d.Drop, d.Scramble)
+					if err != nil {
+						return err
+					}
+				}
+				break
+			}
+		}
+		if !exists {
+			title, err := getTitle(d.TID)
+			if err != nil {
+				return err
+			}
+			log.Printf("Remove VideoFile : %s (%d): %d", title, d.EpNum, d.PID)
+			err = db.DeleteVideoFile(d.ID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func getTitle(tid int) (string, error) {
+	data, err := db.GetAllTitle()
+	if err != nil {
+		return "", err
+	}
+	for _, d := range data {
+		if d.TID == tid {
+			return d.Title, nil
+		}
+	}
+	return "", fmt.Errorf("Not Found TID")
+}
+
+func getVideoFile() ([]animeFileInfo, error) {
+	var afil []animeFileInfo
+	data, err := db.GetAllTitle()
+	if err != nil {
+		return []animeFileInfo{}, err
+	}
+	loc, err := time.LoadLocation("Asia/Tokyo")
+	if err != nil {
+		return []animeFileInfo{}, err
+	}
+	bar := pb.ProgressBarTemplate(barTemp).Start(len(data))
+	for _, d := range data {
+		url := "http://" + conf.fHost + "/recorded/recfiles_tid.php?mode=detail&tid=" + fmt.Sprintf("%d", d.TID)
+		doc, err := goquery.NewDocument(url)
+		if err != nil {
+			continue
+		}
+		num := doc.Find("#libraryDetail > li").Length()
+		for i := 0; i < num; i++ {
+			var afi animeFileInfo
+			afi.TID = d.TID
+			afi.Title = d.Title
+			e := strings.Trim(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(2)", i+1)).Text(), "話数：")
+			if e == "[話数]" {
+				e = "-1"
+			}
+			afi.EpNum, err = strconv.Atoi(e)
+			if err != nil {
+				return []animeFileInfo{}, err
+			}
+			afi.EpTitle = strings.TrimSpace(strings.Trim(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(3)", i+1)).Text(), "サブタイトル："))
+			t := strings.TrimSpace(strings.Trim(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(4)", i+1)).Text(), "録画日時："))
+			afi.Time, err = time.ParseInLocation("2006/01/02 15:04", strings.Split(t, "(")[0]+strings.Split(t, ")")[1], loc)
+			if err != nil {
+				return []animeFileInfo{}, err
+			}
+			afi.Station = strings.TrimSpace(strings.Trim(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(5)", i+1)).Text(), "放送局："))
+			status := strings.TrimSpace(strings.Trim(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(6)", i+1)).Text(), "ステータス："))
+			if status != "完了" {
+				continue
+			}
+			doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > div > ul.fileType > li", i+1)).Each(func(j int, s *goquery.Selection) {
+				t, _ := s.Attr("class")
+				if t == "mpeg2" {
+					afi.FileTS = strings.TrimSpace(s.Text())
+				} else if t == "mp4HD" {
+					afi.FileMP4HD = strings.TrimSpace(s.Text())
+				} else if t == "mp4SD" {
+					afi.FileMP4SD = strings.TrimSpace(s.Text())
+				}
+			})
+			p, exists := doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > div > a ", i+1)).Attr("href")
+			if !exists {
+				return []animeFileInfo{}, fmt.Errorf("PID not found")
+			}
+			afi.PID, err = strconv.Atoi(strings.Trim(p, "./selectcaptureimage.php?pid="))
+			if err != nil {
+				return []animeFileInfo{}, err
+			}
+			afil = append(afil, afi)
+		}
+		bar.Increment()
+	}
+	bar.Finish()
+	return afil, nil
+}
+
+func checkEpisode(tid int, epnum int) (bool, error) {
+	data, err := db.GetAllEpisode()
+	if err != nil {
+		return false, err
+	}
+	for _, d := range data {
+		if d.TID == tid && d.EpNum == epnum {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func checkVideoFile(pid int) (bool, error) {
+	data, err := db.GetAllVideoFile()
+	if err != nil {
+		return false, err
+	}
+	for _, d := range data {
+		if d.PID == pid {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func insertNewEpisode(afil []animeFileInfo) error {
+	bar := pb.ProgressBarTemplate(barTemp).Start(len(afil))
+	for _, a := range afil {
+		exists, err := checkEpisode(a.TID, a.EpNum)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			err = db.InsertEpisode(a.TID, a.EpNum, a.EpTitle, false)
+			if err != nil {
+				return err
+			}
+		}
+		bar.Increment()
+	}
+	bar.Finish()
+	return nil
+}
+
+func insertNewVideoFile(afil []animeFileInfo) error {
+	bar := pb.ProgressBarTemplate(barTemp).Start(len(afil))
+	for _, a := range afil {
+		exists, err := checkVideoFile(a.PID)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			dr, sc, err := getTSInfo(a.PID)
+			if err != nil {
+				return err
+			}
+			err = db.InsertVideoFile(a.TID, a.EpNum, a.PID, a.FileTS, a.FileMP4HD, a.FileMP4SD, a.Station, a.Time, dr, sc)
+			if err != nil {
+				return err
+			}
+		}
+		bar.Increment()
+	}
+	bar.Finish()
+	return nil
+}
+
+func getTSInfo(pid int) (int, int, error) {
+	url := "http://" + conf.fHost + "/recorded/showcminfo.php?pid=" + fmt.Sprintf("%d", pid)
+	doc, err := goquery.NewDocument(url)
+	if err != nil {
+		return 0, 0, err
+	}
+	text := strings.Split(doc.Find("#programInfo > p:nth-child(3)").Text(), "\n")
+	dr := 0
+	sc := 0
+	for i, t := range text {
+		if i > 0 {
+			e := strings.Split(t, ", ")
+			if len(e) == 4 {
+				d, err := strconv.Atoi(strings.TrimSpace(strings.Split(e[2], "=")[1]))
+				if err != nil {
+					return 0, 0, err
+				}
+				s, err := strconv.Atoi(strings.TrimSpace(strings.Split(e[3], "=")[1]))
+				if err != nil {
+					return 0, 0, err
+				}
+				dr += d
+				sc += s
+			}
+		}
+	}
+	return dr, sc, nil
 }
