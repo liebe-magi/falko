@@ -39,6 +39,8 @@ You can use the following parameters when setting the destination file name.
 - **%epnum%** : Episode number (ex: 01)
 - **%eptitle%** : Episode title (ex: 使徒、襲来)
 
+If you set the file name format **%title%_%epnum%_%eptitle%**, your destination file name is **新世紀エヴァンゲリオン_01_使徒、襲来.m2t(mp4)**. 
+
 ## How to use
 
 ```bash
