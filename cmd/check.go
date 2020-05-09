@@ -1,5 +1,5 @@
 /*
-Copyright © 2020 NAME HERE <EMAIL ADDRESS>
+Copyright © 2020 reeve0930 <reeve0930@gmail.com>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -45,6 +45,15 @@ func (n newAnimeInfo) String() string {
 	)
 }
 
+type foltiaStatus struct {
+	version        string
+	serial         string
+	storage        string
+	storageRemain  string
+	storagePercent int
+	runningDays    int
+}
+
 // checkCmd represents the check command
 var checkCmd = &cobra.Command{
 	Use:   "check",
@@ -58,19 +67,25 @@ var checkCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalln(err)
 		}
-		if checkFlag(newAnime, tidFlag) {
+		c := checkFlag(newAnime, tidFlag)
+		if c == 0 {
+			err = showStatus()
+			if err != nil {
+				log.Fatalln(err)
+			}
+		} else if c == 1 {
 			if newAnime {
 				err = checkNewAnime()
 				if err != nil {
 					log.Fatalln(err)
 				}
 			}
-            if tidFlag {
-                err = showTitle()
-                if err != nil {
-                    log.Fatalln(err)
-                }
-            }
+			if tidFlag {
+				err = showTitle()
+				if err != nil {
+					log.Fatalln(err)
+				}
+			}
 		} else {
 			log.Println("Please check flag. You can use only one flag.")
 		}
@@ -84,7 +99,7 @@ func init() {
 	checkCmd.Flags().BoolP("tid", "t", false, "Check the list of anime title")
 }
 
-func checkFlag(n bool, t bool) bool {
+func checkFlag(n bool, t bool) int {
 	count := 0
 	if n {
 		count++
@@ -92,10 +107,47 @@ func checkFlag(n bool, t bool) bool {
 	if t {
 		count++
 	}
-	if count == 1 {
-		return true
+	return count
+}
+
+func showStatus() error {
+	s, err := getStatus()
+	if err != nil {
+		return err
 	}
-	return false
+	fmt.Println("foltia ANIME LOCKER system infomation")
+	fmt.Printf("  Version : %s\n", s.version)
+	fmt.Printf("  Serial No. : %s\n", s.serial)
+	fmt.Printf("  Running : %d days\n", s.runningDays)
+	fmt.Printf("  Storage : %s/%s (Rem %d%s)\n", s.storageRemain, s.storage, 100-s.storagePercent, "%")
+	return nil
+}
+
+func getStatus() (foltiaStatus, error) {
+	url := "http://" + conf.fHost + "/setup/about.php"
+	doc, err := goquery.NewDocument(url)
+	if err != nil {
+		return foltiaStatus{}, err
+	}
+	var fs foltiaStatus
+	fs.version = strings.TrimSpace(doc.Find("#setUpTable > table > tbody > tr:nth-child(2) > td:nth-child(2)").Text())
+	fs.serial = strings.TrimSpace(strings.Split(doc.Find("#setUpTable > table > tbody > tr:nth-child(3) > td:nth-child(2)").Text(), "\n")[0])
+	fs.runningDays, err = strconv.Atoi(strings.TrimSpace(strings.TrimSuffix(doc.Find("#setUpTable > table > tbody > tr:nth-child(8) > td:nth-child(2)").Text(), "days")))
+	if err != nil {
+		return foltiaStatus{}, err
+	}
+	url = "http://" + conf.fHost + "/recorded/recfiles_tid.php"
+	doc, err = goquery.NewDocument(url)
+	if err != nil {
+		return foltiaStatus{}, err
+	}
+	fs.storagePercent, err = strconv.Atoi(strings.TrimSuffix(doc.Find("#HDDremainder > dl > dd > span.spent").Text(), "%"))
+	if err != nil {
+		return foltiaStatus{}, err
+	}
+	fs.storage = strings.TrimSpace(doc.Find("#HDDtotal").Text())
+	fs.storageRemain = strings.TrimSpace(doc.Find("#HDDrest").Text())
+	return fs, nil
 }
 
 func checkNewAnime() error {
@@ -138,13 +190,13 @@ func getNewAnime() ([]newAnimeInfo, error) {
 }
 
 func showTitle() error {
-    data, err := db.GetAllTitle()
-    if err != nil {
-        return err
-    }
-    sort.Sort(data)
-    for _, d := range data {
-        fmt.Println(d)
-    }
-    return nil
+	data, err := db.GetAllTitle()
+	if err != nil {
+		return err
+	}
+	sort.Sort(data)
+	for _, d := range data {
+		fmt.Println(d)
+	}
+	return nil
 }

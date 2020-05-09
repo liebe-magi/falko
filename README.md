@@ -31,6 +31,7 @@ You should set your environment infomation using `foltia config` command.
 # Set the threshold of dropped TS packets (If the number of dropped TS packets exceeds this value, it will not copy.)
 % foltia config -r 10
 ```
+
 ## Filename format
 
 You can use the following parameters when setting the destination file name.
@@ -39,7 +40,7 @@ You can use the following parameters when setting the destination file name.
 - **%epnum%** : Episode number (ex: 01)
 - **%eptitle%** : Episode title (ex: 使徒、襲来)
 
-If you set the file name format `%title%_%epnum%_%eptitle%`, your destination file name is **新世紀エヴァンゲリオン_01_使徒、襲来.m2t(mp4)**. 
+If you set the file name format `%title%_%epnum%_%eptitle%`, your destination file name is `新世紀エヴァンゲリオン_01_使徒、襲来.m2t(mp4)`. 
 
 ## How to use
 
@@ -53,5 +54,5 @@ If you set the file name format `%title%_%epnum%_%eptitle%`, your destination fi
 
 ## License
 
-Foltia Command Line Tool by reeve0930 is licensed under the Apache License, Version2.0.  
+foltia Command Line Tool by reeve0930 is licensed under the Apache License, Version2.0.  
 See [LICENSE](https://github.com/reeve0930/foltia/blob/master/LICENSE)
