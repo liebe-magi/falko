@@ -439,7 +439,8 @@ func getTSInfo(pid int) (int, int, error) {
 	if err != nil {
 		return 0, 0, err
 	}
-	text := strings.Split(doc.Find("#programInfo > p:nth-child(3)").Text(), "\n")
+	n := doc.Find("#programInfo").Children().Length()
+	text := strings.Split(doc.Find(fmt.Sprintf("#programInfo > p:nth-child(%d)", n)).Text(), "\n")
 	dr := 0
 	sc := 0
 	for i, t := range text {
