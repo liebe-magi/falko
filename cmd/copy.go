@@ -21,6 +21,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/cheggaaa/pb/v3"
@@ -48,57 +49,98 @@ var copyCmd = &cobra.Command{
 	Use:   "copy",
 	Short: "Copy the video files from foltia ANIME LOCKER",
 	Run: func(cmd *cobra.Command, args []string) {
-		copyFunc(cmd)
+		list, err := cmd.Flags().GetBool("list")
+		if err != nil {
+			log.Fatalln(err)
+		}
+		tid, err := cmd.Flags().GetString("tid")
+		if err != nil {
+			log.Fatalln(err)
+		}
+		if list {
+			err = showCopyList(tid)
+			if err != nil {
+				log.Fatalln(err)
+			}
+		} else {
+			err = copyFiles(tid)
+			if err != nil {
+				log.Fatalln(err)
+			}
+		}
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(copyCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// copyCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
 	copyCmd.Flags().BoolP("list", "l", false, "Show the video files that will be copied")
+	copyCmd.Flags().StringP("tid", "t", "", "Copy the video files that have designated TID")
 }
 
-func copyFunc(cmd *cobra.Command) {
-	list, err := cmd.Flags().GetBool("list")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	if list {
-		err = showCopyList()
-		if err != nil {
-			log.Fatalln(err)
-		}
-	} else {
-		err = copyFiles()
-		if err != nil {
-			log.Fatalln(err)
-		}
-	}
-}
-
-func showCopyList() error {
+func showCopyList(tid string) error {
 	fcil, err := getCopyList()
 	if err != nil {
 		return err
+	}
+	if tid != "" {
+		fcil, err = filter(fcil, tid)
+		if err != nil {
+			return err
+		}
 	}
 	showList(fcil)
 	log.Printf("Found %d video files", len(fcil))
 	return nil
 }
 
-func copyFiles() error {
+func filter(fcil []fileCopyInfo, tid string) ([]fileCopyInfo, error) {
+	t := strings.Split(tid, ":")
+	s := ""
+	if len(t) == 1 {
+		s = "tid"
+	} else if len(t) == 2 {
+		s = "ep"
+	} else {
+		return []fileCopyInfo{}, fmt.Errorf("Please check -t format -> -t TID:EpNum")
+	}
+	tidNum, err := strconv.Atoi(t[0])
+	if err != nil {
+		return []fileCopyInfo{}, err
+	}
+	epNum := 0
+	if s == "ep" {
+		epNum, err = strconv.Atoi(t[1])
+		if err != nil {
+			return []fileCopyInfo{}, err
+		}
+	}
+	var fcilNew []fileCopyInfo
+	for _, f := range fcil {
+		if s != "ep" {
+			if f.tid == tidNum {
+				fcilNew = append(fcilNew, f)
+			}
+		} else {
+			if f.tid == tidNum && f.epNum == epNum {
+				fcilNew = append(fcilNew, f)
+			}
+		}
+	}
+	return fcilNew, nil
+}
+
+func copyFiles(tid string) error {
 	log.Println("Start file copy")
 	fcil, err := getCopyList()
 	if err != nil {
 		return err
+	}
+	if tid != "" {
+		fcil, err = filter(fcil, tid)
+		if err != nil {
+			return err
+		}
 	}
 	ep, err := db.GetAllEpisode()
 	if err != nil {
@@ -107,10 +149,11 @@ func copyFiles() error {
 	for i, f := range fcil {
 		log.Printf("[%d/%d] %s (%d:%s)", i+1, len(fcil), f.title, f.epNum, f.epTitle)
 		if f.scramble {
-            log.Println("This file is scrambled")
+			log.Println("This file is scrambled")
 			f.dstname = "[S]" + f.dstname
 		}
 		src := filepath.Join(conf.fPath, f.srcname)
+		f.dstname = fixFileNameLength(f.dstname)
 		dst := filepath.Join(conf.cDest, f.dstname)
 		err = copyVideoFile(src, dst)
 		if err != nil {
@@ -125,6 +168,16 @@ func copyFiles() error {
 	}
 	log.Println("Fished file copy")
 	return nil
+}
+
+func fixFileNameLength(name string) string {
+	if len(name) <= 255 {
+		return name
+	}
+	n := strings.Split(name, ".")
+	s := []rune(n[0])
+	nn := fmt.Sprintf(string(s[:(len(s) - 1)]))
+	return fixFileNameLength(nn + "." + n[1])
 }
 
 func copyVideoFile(src string, dst string) error {
