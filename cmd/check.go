@@ -67,7 +67,11 @@ var checkCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalln(err)
 		}
-		c := checkFlag(newAnime, tidFlag)
+		packet, err := cmd.Flags().GetInt("packet")
+		if err != nil {
+			log.Fatalln(err)
+		}
+		c := checkFlag(newAnime, tidFlag, packet)
 		if c == 0 {
 			err = showStatus()
 			if err != nil {
@@ -86,6 +90,12 @@ var checkCmd = &cobra.Command{
 					log.Fatalln(err)
 				}
 			}
+			if packet != 0 {
+				err = showTSInfo(packet)
+				if err != nil {
+					log.Fatalln(err)
+				}
+			}
 		} else {
 			log.Println("Please check flag. You can use only one flag.")
 		}
@@ -97,9 +107,10 @@ func init() {
 
 	checkCmd.Flags().BoolP("new-anime", "n", false, "Check the list of new anime")
 	checkCmd.Flags().BoolP("tid", "t", false, "Check the list of anime title")
+	checkCmd.Flags().IntP("packet", "p", 0, "Check TS packets infomation of video files (threshold)")
 }
 
-func checkFlag(n bool, t bool) int {
+func checkFlag(n bool, t bool, p int) int {
 	count := 0
 	if n {
 		count++
@@ -107,7 +118,38 @@ func checkFlag(n bool, t bool) int {
 	if t {
 		count++
 	}
+	if p != 0 {
+		count++
+	}
 	return count
+}
+
+func showTSInfo(p int) error {
+	data, err := db.GetAllVideoFile()
+	if err != nil {
+		return err
+	}
+	title, err := db.GetAllTitle()
+	if err != nil {
+		return err
+	}
+	for _, d := range data {
+		if d.Drop > p {
+			var name string
+			for _, t := range title {
+				if t.TID == d.TID {
+					name = t.Title
+					break
+				}
+			}
+			if name != "" {
+				fmt.Printf("%s(%d:%d) (%d) D:%d S:%d\n", name, d.TID, d.EpNum, d.PID, d.Drop, d.Scramble)
+			} else {
+				return fmt.Errorf("Not found TID : %d", d.TID)
+			}
+		}
+	}
+	return nil
 }
 
 func showStatus() error {
