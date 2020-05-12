@@ -34,16 +34,22 @@ type config struct {
 	cFilename   string
 	cFiletype   string
 	cDropThresh int
+	encQuality  int
+	mp2cut      int
+	mp4cut      int
 }
 
 func (c config) String() string {
-	return fmt.Sprintf("foltia_host = \"%s\"\nfoltia_path = \"%s\"\ncopy_dest = \"%s\"\ncopy_filename = \"%s\"\ncopy_filetype = \"%s\"\ncopy_drop_thresh = %d",
+	return fmt.Sprintf("foltia_host = \"%s\"\nfoltia_path = \"%s\"\ncopy_dest = \"%s\"\ncopy_filename = \"%s\"\ncopy_filetype = \"%s\"\ncopy_drop_thresh = %d\nencode_quality = %d\nmp2cm_cut = %d\nmp4cm_cut = %d",
 		c.fHost,
 		c.fPath,
 		c.cDest,
 		c.cFilename,
 		c.cFiletype,
 		c.cDropThresh,
+		c.encQuality,
+		c.mp2cut,
+		c.mp4cut,
 	)
 }
 
@@ -103,4 +109,7 @@ func initConfig() {
 	conf.cFilename = viper.GetString("copy_filename")
 	conf.cFiletype = viper.GetString("copy_filetype")
 	conf.cDropThresh = viper.GetInt("copy_drop_thresh")
+    conf.encQuality = viper.GetInt("encode_quality")
+    conf.encQuality = viper.GetInt("mp2cm_cut")
+    conf.encQuality = viper.GetInt("mp4cm_cut")
 }

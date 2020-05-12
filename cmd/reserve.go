@@ -73,12 +73,12 @@ var reserveCmd = &cobra.Command{
 				log.Println(err)
 			}
 		} else if !list && remove {
-			err = dereserve(4223, 19)
+			err = dereserveProc(args)
 			if err != nil {
 				log.Fatalln(err)
 			}
 		} else {
-			err = reserve(4223, 19, 0, 0, 0)
+			err = reserveProc(args)
 			if err != nil {
 				log.Fatalln(err)
 			}
@@ -91,6 +91,52 @@ func init() {
 
 	reserveCmd.Flags().BoolP("list", "l", false, "録画予約している番組を表示")
 	reserveCmd.Flags().BoolP("remove", "r", false, "予約の取消")
+}
+
+func reserveProc(args []string) error {
+	if len(args) == 1 {
+		tid, err := strconv.Atoi(args[0])
+		if err != nil {
+			return err
+		}
+		err = reserve(tid, 0, conf.encQuality, conf.mp2cut, conf.mp4cut)
+	} else if len(args) == 2 {
+		tid, err := strconv.Atoi(args[0])
+		if err != nil {
+			return err
+		}
+		sid, err := getStationID(args[1])
+		if err != nil {
+			return err
+		}
+		err = reserve(tid, sid, conf.encQuality, conf.mp2cut, conf.mp4cut)
+	} else {
+		return fmt.Errorf("引数の数が不正です")
+	}
+	return nil
+}
+
+func dereserveProc(args []string) error {
+	if len(args) == 1 {
+		tid, err := strconv.Atoi(args[0])
+		if err != nil {
+			return err
+		}
+		err = dereserve(tid, 0)
+	} else if len(args) == 2 {
+		tid, err := strconv.Atoi(args[0])
+		if err != nil {
+			return err
+		}
+		sid, err := getStationID(args[1])
+		if err != nil {
+			return err
+		}
+		err = dereserve(tid, sid)
+	} else {
+		return fmt.Errorf("引数の数が不正です")
+	}
+	return nil
 }
 
 func showReservedList() error {
@@ -178,7 +224,7 @@ func getStationList() stationList {
 
 func getStation(id int) (string, error) {
 	sl := getStationList()
-	if id == -1 {
+	if id == 0 {
 		return "[全局]", nil
 	}
 	for _, s := range sl {
@@ -192,7 +238,7 @@ func getStation(id int) (string, error) {
 func getStationID(st string) (int, error) {
 	sl := getStationList()
 	if st == "[全局]" {
-		return -1, nil
+		return 0, nil
 	}
 	for _, s := range sl {
 		if st == s.Name {

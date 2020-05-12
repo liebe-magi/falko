@@ -31,12 +31,15 @@ var (
 	filename   string
 	filetype   string
 	dropThresh int
+	encQuality int
+	mp2cut     int
+	mp4cut     int
 )
 
 // configCmd represents the config command
 var configCmd = &cobra.Command{
 	Use:   "config",
-	Short: "Change the settings",
+	Short: "設定変更",
 	Run: func(cmd *cobra.Command, args []string) {
 		if checkFlags() {
 			fmt.Println(conf)
@@ -57,8 +60,17 @@ var configCmd = &cobra.Command{
 		if filetype != "" {
 			conf.cFiletype = filetype
 		}
-		if dropThresh != 0 {
+		if dropThresh >= 0 {
 			conf.cDropThresh = dropThresh
+		}
+		if encQuality >= 0 {
+			conf.encQuality = encQuality
+		}
+		if mp2cut >= 0 {
+			conf.mp2cut = mp2cut
+		}
+		if mp4cut >= 0 {
+			conf.mp4cut = mp4cut
 		}
 
 		f, err := os.OpenFile(configPath, os.O_WRONLY|os.O_CREATE, 0666)
@@ -75,12 +87,15 @@ var configCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(configCmd)
 
-	configCmd.Flags().StringVarP(&host, "foltia-ip", "i", "", "set the IP address of foltia")
-	configCmd.Flags().StringVarP(&path, "foltia-path", "s", "", "set the path mounted foltia")
-	configCmd.Flags().StringVarP(&dest, "dest-copy", "d", "", "set the path you want to copy")
-	configCmd.Flags().StringVarP(&filename, "filename", "n", "", "set the filename format")
-	configCmd.Flags().StringVarP(&filetype, "file-type", "t", "", "set the filename format")
-	configCmd.Flags().IntVarP(&dropThresh, "drop-thresh", "r", 0, "set the threshold of dropped TS packets")
+	configCmd.Flags().StringVarP(&host, "foltia-ip", "i", "", "foltia ANIME LOCKERのIPアドレスを設定")
+	configCmd.Flags().StringVarP(&path, "foltia-path", "s", "", "foltia ANIME LOCKERをマウントしているディレクトリを設定")
+	configCmd.Flags().StringVarP(&dest, "dest-copy", "d", "", "コピー先のディレクトリを設定")
+	configCmd.Flags().StringVarP(&filename, "filename", "n", "", "コピー時のファイル名フォーマットを設定")
+	configCmd.Flags().StringVarP(&filetype, "file-type", "t", "", "コピーするファイルタイプを設定")
+	configCmd.Flags().IntVarP(&dropThresh, "drop-thresh", "r", -1, "コピー時のTSドロップ数の閾値設定")
+	configCmd.Flags().IntVarP(&encQuality, "encode-quality", "e", -1, "予約時のエンコード設定")
+	configCmd.Flags().IntVarP(&mp2cut, "mp2cm_cut", "x", -1, "予約時のMPEG2編集設定")
+	configCmd.Flags().IntVarP(&mp4cut, "mp4cm_cut", "y", -1, "予約時のMP4編集設定")
 }
 
 func checkFlags() bool {
