@@ -54,7 +54,7 @@ func (r reservedProg) String() string {
 
 // reserveCmd represents the reserve command
 var reserveCmd = &cobra.Command{
-	Use:   "reserve",
+	Use:   "reserve [TID] (放送局名)",
 	Short: "TID指定による録画予約",
 	Run: func(cmd *cobra.Command, args []string) {
 		list, err := cmd.Flags().GetBool("list")
@@ -111,7 +111,7 @@ func reserveProc(args []string) error {
 		}
 		err = reserve(tid, sid, conf.encQuality, conf.mp2cut, conf.mp4cut)
 	} else {
-		return fmt.Errorf("引数の数が不正です")
+		return fmt.Errorf("引数の値が不正です")
 	}
 	return nil
 }
@@ -134,7 +134,7 @@ func dereserveProc(args []string) error {
 		}
 		err = dereserve(tid, sid)
 	} else {
-		return fmt.Errorf("引数の数が不正です")
+		return fmt.Errorf("引数の値が不正です")
 	}
 	return nil
 }

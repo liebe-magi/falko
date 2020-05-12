@@ -57,7 +57,7 @@ type foltiaStatus struct {
 // checkCmd represents the check command
 var checkCmd = &cobra.Command{
 	Use:   "check",
-	Short: "Check the infomation of foltia",
+	Short: "foltia ANIME LOCKERの情報を確認",
 	Run: func(cmd *cobra.Command, args []string) {
 		newAnime, err := cmd.Flags().GetBool("new-anime")
 		if err != nil {
@@ -97,7 +97,7 @@ var checkCmd = &cobra.Command{
 				}
 			}
 		} else {
-			log.Println("Please check flag. You can use only one flag.")
+			log.Println("複数のフラグを同時に指定できません")
 		}
 	},
 }
@@ -105,9 +105,9 @@ var checkCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(checkCmd)
 
-	checkCmd.Flags().BoolP("new-anime", "n", false, "Check the list of new anime")
-	checkCmd.Flags().BoolP("tid", "t", false, "Check the list of anime title")
-	checkCmd.Flags().IntP("packet", "p", 0, "Check TS packets infomation of video files (threshold)")
+	checkCmd.Flags().BoolP("new-anime", "n", false, "新アニメリストの確認")
+	checkCmd.Flags().BoolP("tid", "t", false, "TIDの一覧を確認")
+	checkCmd.Flags().IntP("packet", "p", 0, "TSドロップの発生しているファイルを確認 (閾値を指定)")
 }
 
 func checkFlag(n bool, t bool, p int) int {
@@ -145,7 +145,7 @@ func showTSInfo(p int) error {
 			if name != "" {
 				fmt.Printf("%s(%d:%d) (%d) D:%d S:%d\n", name, d.TID, d.EpNum, d.PID, d.Drop, d.Scramble)
 			} else {
-				return fmt.Errorf("Not found TID : %d", d.TID)
+				return fmt.Errorf("TIDが見つかりません : %d", d.TID)
 			}
 		}
 	}
@@ -157,7 +157,7 @@ func showStatus() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("foltia ANIME LOCKER system infomation")
+	fmt.Println("foltia ANIME LOCKERシステム情報")
 	fmt.Printf("  Version : %s\n", s.version)
 	fmt.Printf("  Serial No. : %s\n", s.serial)
 	fmt.Printf("  Running : %d days\n", s.runningDays)

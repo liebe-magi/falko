@@ -61,8 +61,7 @@ var (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "foltia",
-	Short: "A Command Line Tool for foltia ANIME LOCKER",
-	Long:  `This is a command line tool for foltia ANIME LOCKER. This tool is made by reeve0930.`,
+	Short: "foltia ANIME LOCKERコマンドラインツール by reeve0930",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

@@ -65,13 +65,13 @@ func init() {
 }
 
 func updateDB() {
-	log.Println("Start update local DB")
+	log.Println("ローカルDBの更新を開始")
 
 	db.InitTitleDB()
 	db.InitEpisodeDB()
 	db.InitVideoFileDB()
 
-	log.Println("Start update anime title")
+	log.Println("アニメタイトルDBを更新")
 	atil, err := getAnimeTitleInfo()
 	if err != nil {
 		log.Fatalln(err)
@@ -85,7 +85,7 @@ func updateDB() {
 		log.Fatalln(err)
 	}
 
-	log.Println("Start collecting video file info")
+	log.Println("動画ファイルの情報取得を開始")
 	afil, err := getVideoFile()
 	if err != nil {
 		log.Fatalln(err)
@@ -94,28 +94,18 @@ func updateDB() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	/*
-		err = removeEpisode(afil)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		err = removeTitle(atil)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	*/
-	log.Println("Start adding new episode")
+	log.Println("エピソードDBの更新を開始")
 	err = insertNewEpisode(afil)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	log.Println("Start adding new video files")
+	log.Println("動画ファイルDBの更新を開始")
 	err = insertNewVideoFile(afil)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	log.Println("Finished update local DB")
+	log.Println("ローカルDBの更新を完了")
 }
 
 func getAnimeTitleInfo() ([]animeTitleInfo, error) {
@@ -196,58 +186,6 @@ func insertNewTitle(atil []animeTitleInfo) error {
 	return nil
 }
 
-func removeTitle(atil []animeTitleInfo) error {
-	data, err := db.GetAllTitle()
-	if err != nil {
-		return err
-	}
-	for _, d := range data {
-		exists := false
-		for _, a := range atil {
-			if d.TID == a.TID {
-				exists = true
-				break
-			}
-		}
-		if !exists {
-			log.Printf("Remove Title : %s (%d)", d.Title, d.TID)
-			err = db.DeleteTitle(d.ID)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func removeEpisode(afil []animeFileInfo) error {
-	data, err := db.GetAllEpisode()
-	if err != nil {
-		return err
-	}
-	for _, d := range data {
-		exists := false
-		for _, a := range afil {
-			if d.TID == a.TID && d.EpNum == a.EpNum {
-				exists = true
-				break
-			}
-		}
-		if !exists {
-			title, err := getTitle(d.TID)
-			if err != nil {
-				return err
-			}
-			log.Printf("Remove Episode : %s (%d:%s)", title, d.EpNum, d.EpTitle)
-			err = db.DeleteEpisode(d.ID)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 func removeVideoFile(afil []animeFileInfo) error {
 	data, err := db.GetAllVideoFile()
 	if err != nil {
@@ -259,7 +197,7 @@ func removeVideoFile(afil []animeFileInfo) error {
 			if d.PID == a.PID {
 				exists = true
 				if d.FileTS != a.FileTS || d.FileMP4HD != a.FileMP4HD || d.FileMP4SD != a.FileMP4SD {
-					log.Printf("Update file info : %s (%d:%s)", a.Title, a.EpNum, a.EpTitle)
+					log.Printf("動画ファイルの情報を更新 : %s (%d:%s)", a.Title, a.EpNum, a.EpTitle)
 					err = db.UpdateVideoFile(d.ID, d.TID, d.EpNum, d.PID, a.FileTS, a.FileMP4HD, a.FileMP4SD, d.Station, d.Time, d.Drop, d.Scramble)
 					if err != nil {
 						return err
@@ -273,7 +211,7 @@ func removeVideoFile(afil []animeFileInfo) error {
 			if err != nil {
 				return err
 			}
-			log.Printf("Remove VideoFile : %s (%d): %d", title, d.EpNum, d.PID)
+			log.Printf("動画ファイルの情報を削除 : %s (%d): %d", title, d.EpNum, d.PID)
 			err = db.DeleteVideoFile(d.ID)
 			if err != nil {
 				return err
@@ -293,7 +231,7 @@ func getTitle(tid int) (string, error) {
 			return d.Title, nil
 		}
 	}
-	return "", fmt.Errorf("Not Found TID")
+	return "", fmt.Errorf("TIDが未定義")
 }
 
 func getVideoFile() ([]animeFileInfo, error) {

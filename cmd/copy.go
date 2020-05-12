@@ -41,29 +41,52 @@ type fileCopyInfo struct {
 	scramble bool
 }
 
-var dbt = []string{"NHK総合", "NHK Eテレ", "フジテレビ", "日本テレビ", "TBS", "テレビ朝日", "テレビ東京", "tvk", "チバテレビ", "TOKYO MX", "TOKYO MX2"}
-var dbs = []string{"NHK-BS1", "NHK-BS2", "BSテレ東", "BS-TBS", "BSフジ", "BS朝日", "BS日テレ", "BS11イレブン", "BS12トゥエルビ", "NHK BSプレミアム", "Dlife"}
-
 // copyCmd represents the copy command
 var copyCmd = &cobra.Command{
-	Use:   "copy",
-	Short: "Copy the video files from foltia ANIME LOCKER",
+	Use:   "copy (TID) (Episode No)",
+	Short: "動画ファイルのコピー",
 	Run: func(cmd *cobra.Command, args []string) {
 		list, err := cmd.Flags().GetBool("list")
 		if err != nil {
 			log.Fatalln(err)
 		}
-		tid, err := cmd.Flags().GetString("tid")
+		reset, err := cmd.Flags().GetBool("reset")
 		if err != nil {
 			log.Fatalln(err)
 		}
-		if list {
-			err = showCopyList(tid)
+		tid := -1
+		epNum := -1
+		if len(args) == 1 {
+			tid, err = strconv.Atoi(args[0])
 			if err != nil {
 				log.Fatalln(err)
 			}
+		} else if len(args) == 2 {
+			tid, err = strconv.Atoi(args[0])
+			if err != nil {
+				log.Fatalln(err)
+			}
+			epNum, err = strconv.Atoi(args[1])
+			if err != nil {
+				log.Fatalln(err)
+			}
+		}
+		if list && !reset {
+			err = showCopyList(tid, epNum)
+			if err != nil {
+				log.Fatalln(err)
+			}
+		} else if !list && reset {
+			if len(args) != 2 {
+				log.Fatalln("TIDとエピソード番号を指定して下さい")
+			} else {
+				err = resetCopyStatus(tid, epNum)
+				if err != nil {
+					log.Fatalln(err)
+				}
+			}
 		} else {
-			err = copyFiles(tid)
+			err = copyFiles(tid, epNum)
 			if err != nil {
 				log.Fatalln(err)
 			}
@@ -74,55 +97,35 @@ var copyCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(copyCmd)
 
-	copyCmd.Flags().BoolP("list", "l", false, "Show the video files that will be copied")
-	copyCmd.Flags().StringP("tid", "t", "", "Copy the video files that have designated TID")
+	copyCmd.Flags().BoolP("list", "l", false, "コピー予定のファイル一覧を表示")
+	copyCmd.Flags().BoolP("reset", "r", false, "動画ファイルのコピー済みフラグを削除")
 }
 
-func showCopyList(tid string) error {
+func showCopyList(tid int, epNum int) error {
 	fcil, err := getCopyList()
 	if err != nil {
 		return err
 	}
-	if tid != "" {
-		fcil, err = filter(fcil, tid)
+	if tid != -1 {
+		fcil, err = filter(fcil, tid, epNum)
 		if err != nil {
 			return err
 		}
 	}
 	showList(fcil)
-	log.Printf("Found %d video files", len(fcil))
+	log.Printf("%d個の動画ファイルを検出", len(fcil))
 	return nil
 }
 
-func filter(fcil []fileCopyInfo, tid string) ([]fileCopyInfo, error) {
-	t := strings.Split(tid, ":")
-	s := ""
-	if len(t) == 1 {
-		s = "tid"
-	} else if len(t) == 2 {
-		s = "ep"
-	} else {
-		return []fileCopyInfo{}, fmt.Errorf("Please check -t format -> -t TID:EpNum")
-	}
-	tidNum, err := strconv.Atoi(t[0])
-	if err != nil {
-		return []fileCopyInfo{}, err
-	}
-	epNum := 0
-	if s == "ep" {
-		epNum, err = strconv.Atoi(t[1])
-		if err != nil {
-			return []fileCopyInfo{}, err
-		}
-	}
+func filter(fcil []fileCopyInfo, tid int, epNum int) ([]fileCopyInfo, error) {
 	var fcilNew []fileCopyInfo
 	for _, f := range fcil {
-		if s != "ep" {
-			if f.tid == tidNum {
+		if epNum == -1 {
+			if f.tid == tid {
 				fcilNew = append(fcilNew, f)
 			}
 		} else {
-			if f.tid == tidNum && f.epNum == epNum {
+			if f.tid == tid && f.epNum == epNum {
 				fcilNew = append(fcilNew, f)
 			}
 		}
@@ -130,14 +133,14 @@ func filter(fcil []fileCopyInfo, tid string) ([]fileCopyInfo, error) {
 	return fcilNew, nil
 }
 
-func copyFiles(tid string) error {
-	log.Println("Start file copy")
+func copyFiles(tid int, epNum int) error {
+	log.Println("コピー開始")
 	fcil, err := getCopyList()
 	if err != nil {
 		return err
 	}
-	if tid != "" {
-		fcil, err = filter(fcil, tid)
+	if tid != -1 {
+		fcil, err = filter(fcil, tid, epNum)
 		if err != nil {
 			return err
 		}
@@ -149,7 +152,7 @@ func copyFiles(tid string) error {
 	for i, f := range fcil {
 		log.Printf("[%d/%d] %s (%d:%s)", i+1, len(fcil), f.title, f.epNum, f.epTitle)
 		if f.scramble {
-			log.Println("This file is scrambled")
+			log.Println("スクランブルが未解除")
 			f.dstname = "[S]" + f.dstname
 		}
 		src := filepath.Join(conf.fPath, f.srcname)
@@ -166,7 +169,7 @@ func copyFiles(tid string) error {
 			}
 		}
 	}
-	log.Println("Fished file copy")
+	log.Println("コピー完了")
 	return nil
 }
 
@@ -241,7 +244,7 @@ func getCopyList() ([]fileCopyInfo, error) {
 				} else if conf.cFiletype == "MP4" {
 					f.dstname = f.dstname + ".mp4"
 				} else {
-					return []fileCopyInfo{}, fmt.Errorf("Please check config : copy_filetype")
+					return []fileCopyInfo{}, fmt.Errorf("設定が異常値 : copy_filetype")
 				}
 
 				nonDropExists := false
@@ -295,7 +298,7 @@ func getCopyList() ([]fileCopyInfo, error) {
 					fcil = append(fcil, f)
 				} else {
 					if !nonDropExists && fileExists {
-						log.Printf("Found a lot of dropped TS packets : %s (%d:%s)", t.Title, e.EpNum, e.EpTitle)
+						log.Printf("設定値を超えたTSドロップが発生 : %s (%d:%s)", t.Title, e.EpNum, e.EpTitle)
 					}
 				}
 			}
@@ -304,18 +307,14 @@ func getCopyList() ([]fileCopyInfo, error) {
 	return fcil, nil
 }
 
-func getStationPriority(station string) (int, error) {
-	for _, s := range dbt {
-		if station == s {
-			return 0, nil
+func getStationPriority(st string) (int, error) {
+	station := getStationList()
+	for _, s := range station {
+		if s.Name == st {
+			return s.StType, nil
 		}
 	}
-	for _, s := range dbs {
-		if station == s {
-			return 1, nil
-		}
-	}
-	return -1, fmt.Errorf("Can not get staion : %s", station)
+	return -1, fmt.Errorf("放送局名が未定義 : %s", st)
 }
 
 func getSrcname(v db.VideoFile) (string, bool) {
@@ -338,4 +337,25 @@ func showList(fcil []fileCopyInfo) {
 	for _, f := range fcil {
 		fmt.Printf("%d : %s\n", f.pid, f.dstname)
 	}
+}
+
+func resetCopyStatus(t int, e int) error {
+	data, err := db.GetAllEpisode()
+	if err != nil {
+		return err
+	}
+	for _, d := range data {
+		if d.TID == t && d.EpNum == e {
+			title, err := getTitle(t)
+			if err != nil {
+				return err
+			}
+			log.Printf("コピー済みフラグをリセット : (%d)%s (%d:%s)", d.TID, title, d.EpNum, d.EpTitle)
+			err = db.UpdateEpisode(d.ID, d.TID, d.EpNum, d.EpTitle, false)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
