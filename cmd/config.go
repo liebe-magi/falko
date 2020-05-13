@@ -20,20 +20,26 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
 
 var (
-	host       string
-	path       string
-	dest       string
-	filename   string
-	filetype   string
-	dropThresh int
-	encQuality int
-	mp2cut     int
-	mp4cut     int
+	host         string
+	path         string
+	dest         string
+	filename     string
+	filetype     string
+	dropThresh   int
+	encQuality   int
+	mp2cut       int
+	mp4cut       int
+	slackToken   string
+	slackTime    string
+	slackName    string
+	slackChannel string
 )
 
 // configCmd represents the config command
@@ -72,16 +78,36 @@ var configCmd = &cobra.Command{
 		if mp4cut >= 0 {
 			conf.mp4cut = mp4cut
 		}
-
-		f, err := os.OpenFile(configPath, os.O_WRONLY|os.O_CREATE, 0666)
-		if err != nil {
-			log.Fatal(err)
+		if slackToken != "" {
+			conf.sToken = slackToken
 		}
-		defer f.Close()
+		err := checkTime(slackTime)
+		if err != nil {
+			log.Fatalln(err)
+		} else {
+			if slackTime != "00:00" {
+				conf.sTime = slackTime
+			}
+		}
+
+		err = writeConfig()
+		if err != nil {
+			log.Fatalln(err)
+		}
 
 		fmt.Println(conf)
-		fmt.Fprintln(f, conf)
 	},
+}
+
+func writeConfig() error {
+	f, err := os.OpenFile(configPath, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	fmt.Fprintln(f, conf)
+	return nil
 }
 
 func init() {
@@ -96,11 +122,48 @@ func init() {
 	configCmd.Flags().IntVarP(&encQuality, "encode-quality", "e", -1, "予約時のエンコード設定")
 	configCmd.Flags().IntVarP(&mp2cut, "mp2cm_cut", "x", -1, "予約時のMPEG2編集設定")
 	configCmd.Flags().IntVarP(&mp4cut, "mp4cm_cut", "y", -1, "予約時のMP4編集設定")
+	configCmd.Flags().StringVarP(&slackToken, "slack_token", "b", "", "Slack botトークンの設定")
+	configCmd.Flags().StringVarP(&slackTime, "slack_time", "c", "00:00", "Slack通知を送る時間の設定")
 }
 
 func checkFlags() bool {
-	if host == "" && path == "" && dest == "" && filename == "" && filetype == "" && dropThresh == 0 {
+	if host == "" && path == "" && dest == "" && filename == "" && filetype == "" && dropThresh == 0 && encQuality == -1 && mp2cut == -1 && mp4cut == -1 && slackToken == "" && slackTime == "00:00" {
 		return true
 	}
 	return false
+}
+
+func checkTime(t string) error {
+	tt := strings.Split(t, ":")
+	if len(tt) != 2 {
+		return fmt.Errorf("時刻指定が不正値 : slack_time")
+	}
+	h, err := strconv.Atoi(tt[0])
+	if err != nil {
+		return nil
+	}
+	if h < 0 || h > 23 {
+		return fmt.Errorf("時刻の範囲が不正")
+	}
+	m, err := strconv.Atoi(tt[1])
+	if err != nil {
+		return nil
+	}
+	if m < 0 || m > 59 {
+		return fmt.Errorf("時刻の範囲が不正")
+	}
+	return nil
+}
+
+func getSlackTime() (int, int, error) {
+	tt := strings.Split(conf.sTime, ":")
+	h, err := strconv.Atoi(tt[0])
+	if err != nil {
+		return 0, 0, err
+	}
+	m, err := strconv.Atoi(tt[1])
+	if err != nil {
+		return 0, 0, err
+	}
+	return h, m, nil
 }

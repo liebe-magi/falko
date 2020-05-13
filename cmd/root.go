@@ -37,10 +37,14 @@ type config struct {
 	encQuality  int
 	mp2cut      int
 	mp4cut      int
+	sToken      string
+	sTime       string
+	sUser       string
+	sChannel    string
 }
 
 func (c config) String() string {
-	return fmt.Sprintf("foltia_host = \"%s\"\nfoltia_path = \"%s\"\ncopy_dest = \"%s\"\ncopy_filename = \"%s\"\ncopy_filetype = \"%s\"\ncopy_drop_thresh = %d\nencode_quality = %d\nmp2cm_cut = %d\nmp4cm_cut = %d",
+	return fmt.Sprintf("foltia_host = \"%s\"\nfoltia_path = \"%s\"\ncopy_dest = \"%s\"\ncopy_filename = \"%s\"\ncopy_filetype = \"%s\"\ncopy_drop_thresh = %d\nencode_quality = %d\nmp2cm_cut = %d\nmp4cm_cut = %d\nslack_token = \"%s\"\nslack_time = \"%s\"\nslack_user = \"%s\"\nslack_channel = \"%s\"",
 		c.fHost,
 		c.fPath,
 		c.cDest,
@@ -50,6 +54,10 @@ func (c config) String() string {
 		c.encQuality,
 		c.mp2cut,
 		c.mp4cut,
+		c.sToken,
+		c.sTime,
+		c.sUser,
+		c.sChannel,
 	)
 }
 
@@ -108,7 +116,11 @@ func initConfig() {
 	conf.cFilename = viper.GetString("copy_filename")
 	conf.cFiletype = viper.GetString("copy_filetype")
 	conf.cDropThresh = viper.GetInt("copy_drop_thresh")
-    conf.encQuality = viper.GetInt("encode_quality")
-    conf.encQuality = viper.GetInt("mp2cm_cut")
-    conf.encQuality = viper.GetInt("mp4cm_cut")
+	conf.encQuality = viper.GetInt("encode_quality")
+	conf.encQuality = viper.GetInt("mp2cm_cut")
+	conf.encQuality = viper.GetInt("mp4cm_cut")
+	conf.sToken = viper.GetString("slack_token")
+	conf.sTime = viper.GetString("slack_time")
+	conf.sUser = viper.GetString("slack_user")
+	conf.sChannel = viper.GetString("slack_channel")
 }

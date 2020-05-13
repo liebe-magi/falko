@@ -28,6 +28,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var jweek = [7]string{"日", "月", "火", "水", "木", "金", "土"}
+
 type newAnimeInfo struct {
 	TID     int
 	Station string
@@ -36,7 +38,6 @@ type newAnimeInfo struct {
 }
 
 func (n newAnimeInfo) String() string {
-	jweek := [7]string{"日", "月", "火", "水", "木", "金", "土"}
 	return fmt.Sprintf("%s : %s(%d) %s",
 		n.Time.Format("2006/01/02")+"("+jweek[n.Time.Weekday()]+") "+n.Time.Format("15:04"),
 		n.Title,
