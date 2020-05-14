@@ -55,6 +55,15 @@ type foltiaStatus struct {
 	runningDays    int
 }
 
+type reservation struct {
+	TID     int
+	Station string
+	Title   string
+	EpNum   int
+	EpTitle string
+	Time    time.Time
+}
+
 // checkCmd represents the check command
 var checkCmd = &cobra.Command{
 	Use:   "check",
@@ -72,7 +81,11 @@ var checkCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalln(err)
 		}
-		c := checkFlag(newAnime, tidFlag, packet)
+		reserve, err := cmd.Flags().GetInt("reserve")
+		if err != nil {
+			log.Fatalln(err)
+		}
+		c := checkFlag(newAnime, tidFlag, packet, reserve)
 		if c == 0 {
 			err = showStatus()
 			if err != nil {
@@ -97,6 +110,12 @@ var checkCmd = &cobra.Command{
 					log.Fatalln(err)
 				}
 			}
+			if reserve != 0 {
+				err = showReservationList(reserve)
+				if err != nil {
+					log.Fatalln(err)
+				}
+			}
 		} else {
 			log.Println("複数のフラグを同時に指定できません")
 		}
@@ -108,10 +127,72 @@ func init() {
 
 	checkCmd.Flags().BoolP("new-anime", "n", false, "新アニメリストの確認")
 	checkCmd.Flags().BoolP("tid", "t", false, "TIDの一覧を確認")
+	checkCmd.Flags().IntP("reserve", "r", 0, "録画予約一覧を確認 (表示する日数を指定)")
 	checkCmd.Flags().IntP("packet", "p", 0, "TSドロップの発生しているファイルを確認 (閾値を指定)")
 }
 
-func checkFlag(n bool, t bool, p int) int {
+func showReservationList(r int) error {
+	fmt.Println("予約一覧")
+	rl, err := getReservationList()
+	if err != nil {
+		return err
+	}
+	rl = filterReservation(rl, r)
+	for _, r := range rl {
+		fmt.Printf("%s %s(%d) %d:%s %s\n", r.Time.Format("2006/01/02 15:04"), r.Title, r.TID, r.EpNum, r.EpTitle, r.Station)
+	}
+	return nil
+}
+
+func filterReservation(rl []reservation, d int) []reservation {
+	now := time.Now()
+	end := now.Add(time.Duration(d*24) * time.Hour)
+	var newRl []reservation
+	for _, r := range rl {
+		if r.Time.Before(end) {
+			newRl = append(newRl, r)
+		}
+	}
+	return newRl
+}
+
+func getReservationList() ([]reservation, error) {
+	loc, err := time.LoadLocation("Asia/Tokyo")
+	if err != nil {
+		return []reservation{}, err
+	}
+	var rl []reservation
+	url := "http://" + conf.fHost + "/reservation/index.php"
+	for i := 1; i < 100; i++ {
+		u := url + fmt.Sprintf("?p=%d", i)
+		doc, err := goquery.NewDocument(u)
+		if err != nil {
+			return []reservation{}, err
+		}
+		data := doc.Find("#contents > table > tbody > tr")
+		if data.Length() == 1 {
+			break
+		}
+		data.Each(func(i int, s *goquery.Selection) {
+			if i != 0 {
+				var r reservation
+				r.TID, _ = strconv.Atoi(s.Find("td:nth-child(2)").Text())
+				if r.TID != -1 {
+					r.Station = strings.TrimSpace(s.Find("td:nth-child(3)").Text())
+					r.Title = strings.TrimSpace(s.Find("td:nth-child(4) > a").Text())
+					r.EpNum, _ = strconv.Atoi(s.Find("td:nth-child(5)").Text())
+					r.EpTitle = strings.TrimSpace(s.Find("td:nth-child(6)").Text())
+					t := strings.TrimSpace(s.Find("td:nth-child(7)").Text())
+					r.Time, _ = time.ParseInLocation("2006/01/02 15:04", strings.Split(t, "(")[0]+" "+strings.Split(strings.Split(t, ")")[1], " ")[1], loc)
+					rl = append(rl, r)
+				}
+			}
+		})
+	}
+	return rl, nil
+}
+
+func checkFlag(n bool, t bool, p int, r int) int {
 	count := 0
 	if n {
 		count++
@@ -120,6 +201,9 @@ func checkFlag(n bool, t bool, p int) int {
 		count++
 	}
 	if p != 0 {
+		count++
+	}
+	if r != 0 {
 		count++
 	}
 	return count
