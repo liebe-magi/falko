@@ -53,7 +53,7 @@ func runBot() {
 	rtm := api.NewRTM()
 	go rtm.ManageConnection()
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(1 * time.Second)
 
 	if conf.sUser == "" || conf.sChannel == "" {
 		activateSlack(rtm)
@@ -124,13 +124,35 @@ func notifyTask(rtm *slack.RTM) {
 		s := time.Date(t.Year(), t.Month(), t.Day(), h, m, 0, 0, loc)
 		e := time.Date(t.Year(), t.Month(), t.Day(), h, m+1, 0, 0, loc)
 		if t.After(s) && t.Before(e) {
+			//予約の通知
+			err = notifyReservation(rtm)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			//新アニメの通知
 			err = notifyNewAnime(rtm)
 			if err != nil {
 				log.Fatalln(err)
 			}
 		}
-		time.Sleep(30 * time.Second)
+		time.Sleep(1 * time.Minute)
 	}
+}
+
+func notifyReservation(rtm *slack.RTM) error {
+	log.Println("録画予定の通知開始")
+	rl, err := getReservationList()
+	if err != nil {
+		return err
+	}
+	rl = filterReservation(rl, 1)
+	text := "【本日の予約】\n"
+	for _, r := range rl {
+		text += fmt.Sprintf("%s [%s]\n", r.Time.Format("15:04"), r.Station)
+		text += fmt.Sprintf("    %s(%d)\n", r.Title, r.EpNum)
+	}
+	sendMsg(rtm, text)
+	return nil
 }
 
 func notifyNewAnime(rtm *slack.RTM) error {
