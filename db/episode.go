@@ -29,7 +29,7 @@ type AnimeEpisode struct {
 	gorm.Model
 	TID        int
 	EpNum      int
-	EpTitle   string
+	EpTitle    string
 	CopyStatus bool
 }
 
@@ -39,7 +39,7 @@ func InitEpisodeDB() error {
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_episode.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_episode.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -55,13 +55,13 @@ func InsertEpisode(tid int, epnum int, eptitle string, copyStatus bool) error {
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_episode.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_episode.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
 		return err
 	}
-	db.Create(&AnimeEpisode{TID: tid,EpNum: epnum, EpTitle: eptitle, CopyStatus: copyStatus})
+	db.Create(&AnimeEpisode{TID: tid, EpNum: epnum, EpTitle: eptitle, CopyStatus: copyStatus})
 	return nil
 }
 
@@ -71,7 +71,7 @@ func UpdateEpisode(id uint, tid int, epnum int, eptitle string, copyStatus bool)
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_episode.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_episode.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -93,7 +93,7 @@ func DeleteEpisode(id uint) error {
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_episode.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_episode.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -111,7 +111,7 @@ func GetAllEpisode() ([]AnimeEpisode, error) {
 	if err != nil {
 		return []AnimeEpisode{}, err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_episode.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_episode.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -128,7 +128,7 @@ func GetOneEpisode(id uint) (AnimeEpisode, error) {
 	if err != nil {
 		return AnimeEpisode{}, err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_episode.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_episode.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {

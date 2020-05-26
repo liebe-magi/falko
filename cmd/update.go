@@ -25,7 +25,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/cheggaaa/pb/v3"
-	"github.com/reeve0930/foltia/db"
+	"github.com/reeve0930/falko/db"
 	"github.com/spf13/cobra"
 )
 

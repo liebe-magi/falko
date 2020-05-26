@@ -40,7 +40,7 @@ func InitNewAnimeDB() error {
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_newanime.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_newanime.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -56,7 +56,7 @@ func InsertNewAnime(tid int, title string, station string, time time.Time) error
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_newanime.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_newanime.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -72,7 +72,7 @@ func UpdateNewAnime(id uint, tid int, title string, station string, time time.Ti
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_newanime.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_newanime.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -94,7 +94,7 @@ func DeleteNewAnime(id uint) error {
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_newanime.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_newanime.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -112,7 +112,7 @@ func GetAllNewAnime() ([]NewAnime, error) {
 	if err != nil {
 		return []NewAnime{}, err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_newanime.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_newanime.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -129,7 +129,7 @@ func GetOneNewAnime(id uint) (NewAnime, error) {
 	if err != nil {
 		return NewAnime{}, err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_newanime.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_newanime.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {

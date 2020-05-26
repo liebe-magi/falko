@@ -16,7 +16,7 @@ limitations under the License.
 
 package main
 
-import "github.com/reeve0930/foltia/cmd"
+import "github.com/reeve0930/falko/cmd"
 
 func main() {
 	cmd.Execute()

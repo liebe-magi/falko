@@ -58,7 +58,7 @@ func InitTitleDB() error {
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_title.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_title.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -74,7 +74,7 @@ func InsertTitle(tid int, title string, yomi string, year int, active bool) erro
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_title.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_title.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -90,7 +90,7 @@ func UpdateTitle(id uint, tid int, title string, yomi string, year int, active b
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_title.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_title.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -113,7 +113,7 @@ func DeleteTitle(id uint) error {
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_title.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_title.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -131,7 +131,7 @@ func GetAllTitle() (AnimeTitleList, error) {
 	if err != nil {
 		return AnimeTitleList{}, err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_title.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_title.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -148,7 +148,7 @@ func GetOneTitle(id uint) (AnimeTitle, error) {
 	if err != nil {
 		return AnimeTitle{}, err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_title.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_title.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {

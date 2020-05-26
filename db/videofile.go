@@ -51,7 +51,7 @@ func InitVideoFileDB() error {
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_videofile.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_videofile.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -67,7 +67,7 @@ func InsertVideoFile(tid int, epnum int, pid int, filets string, filemp4hd strin
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_videofile.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_videofile.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -83,7 +83,7 @@ func UpdateVideoFile(id uint, tid int, epnum int, pid int, filets string, filemp
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_videofile.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_videofile.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -111,7 +111,7 @@ func DeleteVideoFile(id uint) error {
 	if err != nil {
 		return err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_videofile.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_videofile.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -129,7 +129,7 @@ func GetAllVideoFile() ([]VideoFile, error) {
 	if err != nil {
 		return []VideoFile{}, err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_videofile.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_videofile.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {
@@ -146,7 +146,7 @@ func GetOneVideoFile(id uint) (VideoFile, error) {
 	if err != nil {
 		return VideoFile{}, err
 	}
-	dbPath := filepath.Join(home, ".config", "foltia", "foltia_videofile.sqlite3")
+	dbPath := filepath.Join(home, ".config", "falko", "foltia_videofile.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
 	defer db.Close()
 	if err != nil {

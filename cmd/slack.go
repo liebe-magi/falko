@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/reeve0930/foltia/db"
+	"github.com/reeve0930/falko/db"
 	"github.com/slack-go/slack"
 	"github.com/spf13/cobra"
 )

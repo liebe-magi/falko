@@ -68,8 +68,9 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "foltia",
-	Short: "foltia ANIME LOCKERコマンドラインツール by reeve0930",
+	Use:   "falko",
+	Short: "FALKO for foltia ANIME LOCKER",
+	Long:  "foltia ANIME LOCKERコマンドラインツール by reeve0930",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -93,7 +94,7 @@ func initConfig() {
 		os.Exit(1)
 	}
 
-	configPath = filepath.Join(home, ".config", "foltia")
+	configPath = filepath.Join(home, ".config", "falko")
 	_, err = os.Stat(configPath)
 	if os.IsNotExist(err) {
 		os.Mkdir(configPath, 0777)
