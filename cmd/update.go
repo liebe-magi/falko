@@ -104,7 +104,7 @@ func updateDB() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	data, err := getCopyList()
+	data, err := getCopyList(false)
 	log.Printf("%d個の動画ファイルを検出", len(data))
 	log.Println("ローカルDBの更新を完了")
 }

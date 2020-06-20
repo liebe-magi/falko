@@ -54,6 +54,10 @@ var copyCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalln(err)
 		}
+		ignore, err := cmd.Flags().GetBool("ignoreDrop")
+		if err != nil {
+			log.Fatalln(err)
+		}
 		tid := -1
 		epNum := -1
 		if len(args) == 1 {
@@ -72,11 +76,11 @@ var copyCmd = &cobra.Command{
 			}
 		}
 		if list && !reset {
-			err = showCopyList(tid, epNum)
+			err = showCopyList(tid, epNum, ignore)
 			if err != nil {
 				log.Fatalln(err)
 			}
-		} else if !list && reset {
+		} else if !list && reset && !ignore {
 			if len(args) != 2 {
 				log.Fatalln("TIDとエピソード番号を指定して下さい")
 			} else {
@@ -85,11 +89,13 @@ var copyCmd = &cobra.Command{
 					log.Fatalln(err)
 				}
 			}
-		} else {
-			err = copyFiles(tid, epNum)
+		} else if !list && !reset {
+			err = copyFiles(tid, epNum, ignore)
 			if err != nil {
 				log.Fatalln(err)
 			}
+		} else {
+			log.Fatalln("フラグの指定を確認して下さい")
 		}
 	},
 }
@@ -99,10 +105,11 @@ func init() {
 
 	copyCmd.Flags().BoolP("list", "l", false, "コピー予定のファイル一覧を表示")
 	copyCmd.Flags().BoolP("reset", "r", false, "動画ファイルのコピー済みフラグを削除")
+	copyCmd.Flags().BoolP("ignoreDrop", "i", false, "TSドロップを無視してコピー")
 }
 
-func showCopyList(tid int, epNum int) error {
-	fcil, err := getCopyList()
+func showCopyList(tid int, epNum int, ignore bool) error {
+	fcil, err := getCopyList(ignore)
 	if err != nil {
 		return err
 	}
@@ -133,9 +140,9 @@ func filter(fcil []fileCopyInfo, tid int, epNum int) ([]fileCopyInfo, error) {
 	return fcilNew, nil
 }
 
-func copyFiles(tid int, epNum int) error {
+func copyFiles(tid int, epNum int, ignore bool) error {
 	log.Println("コピー開始")
-	fcil, err := getCopyList()
+	fcil, err := getCopyList(ignore)
 	if err != nil {
 		return err
 	}
@@ -163,7 +170,7 @@ func copyFiles(tid int, epNum int) error {
 			return err
 		}
 		for _, e := range ep {
-			if e.TID == f.tid && e.EpNum == f.epNum {
+			if !ignore && (e.TID == f.tid && e.EpNum == f.epNum) {
 				db.UpdateEpisode(e.ID, e.TID, e.EpNum, e.EpTitle, true)
 				break
 			}
@@ -210,7 +217,7 @@ func copyVideoFile(src string, dst string) error {
 	return nil
 }
 
-func getCopyList() ([]fileCopyInfo, error) {
+func getCopyList(ignore bool) ([]fileCopyInfo, error) {
 	title, err := db.GetAllTitle()
 	if err != nil {
 		return []fileCopyInfo{}, err
@@ -252,7 +259,7 @@ func getCopyList() ([]fileCopyInfo, error) {
 				for _, v := range videofile {
 					if e.TID == v.TID && e.EpNum == v.EpNum {
 						fileExists = true
-						if v.Drop < conf.cDropThresh {
+						if ignore || (v.Drop < conf.cDropThresh) {
 							nonDropExists = true
 							if f.srcname == "" {
 								name, check := getSrcname(v)
