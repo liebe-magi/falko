@@ -210,7 +210,10 @@ func copyVideoFile(src string, dst string) error {
 	bar := pb.New64(srcSize).SetTemplateString(barTemp).Start()
 	reader := bar.NewProxyReader(s)
 
-	io.Copy(d, reader)
+	_, err = io.Copy(d, reader)
+	if err != nil {
+		return err
+	}
 
 	bar.Finish()
 
