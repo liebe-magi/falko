@@ -210,11 +210,15 @@ func copyVideoFile(src string, dst string) error {
 	bar := pb.New64(srcSize).SetTemplateString(barTemp).Start()
 	reader := bar.NewProxyReader(s)
 
-	_, err = io.Copy(d, reader)
-	if err != nil {
-		return err
+	for {
+		_, err = io.Copy(d, reader)
+		if err != nil {
+			log.Println(err)
+            log.Println("コピー処理が失敗しました。リトライします。")
+		} else {
+			break
+		}
 	}
-
 	bar.Finish()
 
 	return nil
