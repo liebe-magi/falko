@@ -49,6 +49,22 @@ type animeFileInfo struct {
 	FileMP4SD string
 }
 
+type keywordRecFileInfo struct {
+	Keyword   string
+	Title     string
+	PID       int
+	Time      time.Time
+	Station   string
+	FileTS    string
+	FileMP4HD string
+	FileMP4SD string
+}
+
+type keyInfo struct {
+	Key string
+	URL string
+}
+
 var barTemp = `{{counters .}} {{bar . "|" "=" ">" "_" "|"}} {{ speed .}} {{percent .}} {{rtime . "ETA %s"}}`
 
 // updateCmd represents the update command
@@ -67,9 +83,22 @@ func init() {
 func updateDB() {
 	log.Println("ローカルDBの更新を開始")
 
-	db.InitTitleDB()
-	db.InitEpisodeDB()
-	db.InitVideoFileDB()
+	err := db.InitTitleDB()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = db.InitEpisodeDB()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = db.InitVideoFileDB()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = db.InitKeywordRecFileDB()
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	log.Println("アニメタイトルDBを更新")
 	atil, err := getAnimeTitleInfo()
@@ -104,6 +133,22 @@ func updateDB() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	log.Println("キーワード録画ファイルの情報取得を開始")
+	krfil, err := getKeywordRecFile()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	log.Println("キーワード録画ファイルDBの更新を開始")
+	err = removeKeywordRecFile(krfil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	err = insertNewKeywordRecFile(krfil)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	data, err := getCopyList(false)
 	log.Printf("%d個の動画ファイルを検出", len(data))
 	log.Println("ローカルDBの更新を完了")
@@ -400,4 +445,140 @@ func getTSInfo(pid int) (int, int, error) {
 		}
 	}
 	return dr, sc, nil
+}
+
+func getKeywordRecFile() ([]keywordRecFileInfo, error) {
+	var krfil []keywordRecFileInfo
+	url := "http://" + conf.fHost + "/recorded/recfiles_key.php?mode=detail"
+	doc, err := goquery.NewDocument(url)
+	if err != nil {
+		return []keywordRecFileInfo{}, err
+	}
+	var keylist []keyInfo
+	doc.Find("#Librarytable > table > tbody > tr").Each(func(i int, s *goquery.Selection) {
+		key := s.Find("td > a").Text()
+		url, exists := s.Find("td > a").Attr("href")
+		if exists {
+			k := keyInfo{Key: key, URL: url}
+			keylist = append(keylist, k)
+		}
+	})
+	loc, err := time.LoadLocation("Asia/Tokyo")
+	if err != nil {
+		return []keywordRecFileInfo{}, err
+	}
+	bar := pb.ProgressBarTemplate(barTemp).Start(len(keylist))
+	for _, k := range keylist {
+		url := "http://" + conf.fHost + "/recorded/" + k.URL
+		doc, err := goquery.NewDocument(url)
+		if err != nil {
+			continue
+		}
+		num := doc.Find("#libraryDetail > li").Length()
+		for i := 0; i < num; i++ {
+			var krfi keywordRecFileInfo
+			krfi.Keyword = k.Key
+			krfi.Title = strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(3)", i+1)).Text(), "サブタイトル："))
+			t := strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(4)", i+1)).Text(), "録画日時："))
+			krfi.Time, err = time.ParseInLocation("2006/01/02 15:04", strings.Split(t, "(")[0]+strings.Split(t, ")")[1], loc)
+			if err != nil {
+				return []keywordRecFileInfo{}, err
+			}
+			krfi.Station = strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(5)", i+1)).Text(), "放送局："))
+			status := strings.TrimSpace(strings.TrimPrefix(doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > li:nth-child(6)", i+1)).Text(), "ステータス："))
+			if status != "完了" {
+				continue
+			}
+			doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > div > ul.fileType > li", i+1)).Each(func(j int, s *goquery.Selection) {
+				t, _ := s.Attr("class")
+				if t == "mpeg2" {
+					krfi.FileTS = strings.TrimSpace(s.Text())
+				} else if t == "mp4HD" {
+					krfi.FileMP4HD = strings.TrimSpace(s.Text())
+				} else if t == "mp4SD" {
+					krfi.FileMP4SD = strings.TrimSpace(s.Text())
+				}
+			})
+			p, exists := doc.Find(fmt.Sprintf("#libraryDetail > li:nth-child(%d) > div.programInfo > ul > div > a ", i+1)).Attr("href")
+			if !exists {
+				return []keywordRecFileInfo{}, fmt.Errorf("PID not found")
+			}
+			krfi.PID, err = strconv.Atoi(strings.TrimPrefix(p, "./selectcaptureimage.php?pid="))
+			if err != nil {
+				return []keywordRecFileInfo{}, err
+			}
+			krfil = append(krfil, krfi)
+		}
+		bar.Increment()
+	}
+	bar.Finish()
+
+	return krfil, nil
+}
+
+func removeKeywordRecFile(krfil []keywordRecFileInfo) error {
+	data, err := db.GetAllKeywordRecFile()
+	if err != nil {
+		return err
+	}
+	for _, d := range data {
+		exists := false
+		for _, k := range krfil {
+			if d.PID == k.PID {
+				exists = true
+				if d.FileTS != k.FileTS || d.FileMP4HD != k.FileMP4HD || d.FileMP4SD != k.FileMP4SD {
+					log.Printf("動画ファイルの情報を更新 : %s (%d)", k.Title, k.PID)
+					err = db.UpdateKeywordRecFile(d.ID, k.Keyword, k.Title, d.PID, k.FileTS, k.FileMP4HD, k.FileMP4SD, d.Station, d.Time, d.Drop, d.Scramble, d.Copy)
+					if err != nil {
+						return err
+					}
+				}
+				break
+			}
+		}
+		if !exists {
+			log.Printf("動画ファイルの情報を削除 : %s (%d)", d.Title, d.PID)
+			err = db.DeleteKeywordRecFile(d.ID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func insertNewKeywordRecFile(krfil []keywordRecFileInfo) error {
+	bar := pb.ProgressBarTemplate(barTemp).Start(len(krfil))
+	for _, k := range krfil {
+		exists, err := checkKeywordRecFile(k.PID)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			dr, sc, err := getTSInfo(k.PID)
+			if err != nil {
+				return err
+			}
+			err = db.InsertKeywordRecFile(k.Keyword, k.Title, k.PID, k.FileTS, k.FileMP4HD, k.FileMP4SD, k.Station, k.Time, dr, sc, false)
+			if err != nil {
+				return err
+			}
+		}
+		bar.Increment()
+	}
+	bar.Finish()
+	return nil
+}
+
+func checkKeywordRecFile(pid int) (bool, error) {
+	data, err := db.GetAllKeywordRecFile()
+	if err != nil {
+		return false, err
+	}
+	for _, d := range data {
+		if d.PID == pid {
+			return true, nil
+		}
+	}
+	return false, nil
 }

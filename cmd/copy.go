@@ -156,6 +156,10 @@ func copyFiles(tid int, epNum int, ignore bool) error {
 	if err != nil {
 		return err
 	}
+	key, err := db.GetAllKeywordRecFile()
+	if err != nil {
+		return err
+	}
 	for i, f := range fcil {
 		log.Printf("[%d/%d] %s (%d:%s)", i+1, len(fcil), f.title, f.epNum, f.epTitle)
 		if f.scramble {
@@ -169,10 +173,19 @@ func copyFiles(tid int, epNum int, ignore bool) error {
 		if err != nil {
 			return err
 		}
-		for _, e := range ep {
-			if !ignore && (e.TID == f.tid && e.EpNum == f.epNum) {
-				db.UpdateEpisode(e.ID, e.TID, e.EpNum, e.EpTitle, true)
-				break
+		if f.tid != -1 {
+			for _, e := range ep {
+				if !ignore && (e.TID == f.tid && e.EpNum == f.epNum) {
+					db.UpdateEpisode(e.ID, e.TID, e.EpNum, e.EpTitle, true)
+					break
+				}
+			}
+		} else {
+			for _, k := range key {
+				if f.pid == k.PID {
+					db.UpdateKeywordRecFile(k.ID, k.Keyword, k.Title, k.PID, k.FileTS, k.FileMP4HD, k.FileMP4SD, k.Station, k.Time, k.Drop, k.Scramble, true)
+					break
+				}
 			}
 		}
 	}
@@ -214,7 +227,7 @@ func copyVideoFile(src string, dst string) error {
 		_, err = io.Copy(d, reader)
 		if err != nil {
 			log.Println(err)
-            log.Println("コピー処理が失敗しました。リトライします。")
+			log.Println("コピー処理が失敗しました。リトライします。")
 		} else {
 			break
 		}
@@ -254,7 +267,7 @@ func getCopyList(ignore bool) ([]fileCopyInfo, error) {
 				f.dstname = strings.Replace(f.dstname, "%epnum%", fmt.Sprintf("%02d", e.EpNum), -1)
 				f.dstname = strings.Replace(f.dstname, "%eptitle%", e.EpTitle, -1)
 				if conf.cFiletype == "TS" {
-					f.dstname = f.dstname + ".m2t"
+					f.dstname = f.dstname + ".ts"
 				} else if conf.cFiletype == "MP4" {
 					f.dstname = f.dstname + ".mp4"
 				} else {
@@ -318,6 +331,41 @@ func getCopyList(ignore bool) ([]fileCopyInfo, error) {
 			}
 		}
 	}
+	//キーワード録画を追加
+	key, err := db.GetAllKeywordRecFile()
+	if err != nil {
+		return []fileCopyInfo{}, err
+	}
+	for _, k := range key {
+		if !k.Copy {
+			var fci fileCopyInfo
+			fci.title = k.Title
+			fci.tid = -1
+			fci.epNum = -1
+			fci.epTitle = ""
+			fci.station = k.Station
+			fci.pid = k.PID
+			if k.Scramble != 0 {
+				fci.scramble = true
+			} else {
+				fci.scramble = false
+			}
+			name, check := getSrcnameKey(k)
+			if check {
+				fci.srcname = name
+				d := k.Time.Format("20060102150405")
+				fci.dstname = fmt.Sprintf("[D%d]%s(%s)_%s_%s", k.Drop, k.Keyword, k.Station, d, k.Title)
+				if conf.cFiletype == "TS" {
+					fci.dstname = fci.dstname + ".ts"
+				} else if conf.cFiletype == "MP4" {
+					fci.dstname = fci.dstname + ".mp4"
+				} else {
+					return []fileCopyInfo{}, fmt.Errorf("設定が異常値 : copy_filetype")
+				}
+				fcil = append(fcil, fci)
+			}
+		}
+	}
 	return fcil, nil
 }
 
@@ -338,11 +386,27 @@ func getSrcname(v db.VideoFile) (string, bool) {
 		}
 		return "", false
 	}
+	if v.FileMP4HD != "" {
+		return v.FileMP4HD, true
+	}
 	if v.FileMP4SD != "" {
-		if v.FileMP4HD != "" {
-			return v.FileMP4HD, true
-		}
 		return v.FileMP4SD, true
+	}
+	return "", false
+}
+
+func getSrcnameKey(k db.KeywordRecFile) (string, bool) {
+	if conf.cFiletype == "TS" {
+		if k.FileTS != "" {
+			return k.FileTS, true
+		}
+		return "", false
+	}
+	if k.FileMP4HD != "" {
+		return k.FileMP4HD, true
+	}
+	if k.FileMP4SD != "" {
+		return k.FileMP4SD, true
 	}
 	return "", false
 }
