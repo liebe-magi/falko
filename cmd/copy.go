@@ -354,7 +354,8 @@ func getCopyList(ignore bool) ([]fileCopyInfo, error) {
 			if check {
 				fci.srcname = name
 				d := k.Time.Format("20060102150405")
-				fci.dstname = fmt.Sprintf("[D%d]%s(%s)_%s_%s", k.Drop, k.Keyword, k.Station, d, k.Title)
+				t := strings.Replace(k.Title, "?", "", -1)
+				fci.dstname = fmt.Sprintf("[D%d]%s(%s)_%s_%s", k.Drop, k.Keyword, k.Station, d, t)
 				if conf.cFiletype == "TS" {
 					fci.dstname = fci.dstname + ".ts"
 				} else if conf.cFiletype == "MP4" {
