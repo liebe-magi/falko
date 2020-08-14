@@ -167,7 +167,7 @@ func copyFiles(tid int, epNum int, ignore bool) error {
 			f.dstname = "[S]" + f.dstname
 		}
 		src := filepath.Join(conf.fPath, f.srcname)
-		f.dstname = fixFileNameLength(f.dstname)
+		f.dstname = fixFileName(f.dstname)
 		dst := filepath.Join(conf.cDest, f.dstname)
 		err = copyVideoFile(src, dst)
 		if err != nil {
@@ -191,6 +191,15 @@ func copyFiles(tid int, epNum int, ignore bool) error {
 	}
 	log.Println("コピー完了")
 	return nil
+}
+
+func fixFileName(name string) string {
+	name = strings.Replace(name, "/", "-", -1)
+	name = strings.Replace(name, "?", "？", -1)
+	name = strings.Replace(name, "\"", "”", -1)
+	name = fixFileNameLength(name)
+
+	return name
 }
 
 func fixFileNameLength(name string) string {
@@ -354,9 +363,7 @@ func getCopyList(ignore bool) ([]fileCopyInfo, error) {
 			if check {
 				fci.srcname = name
 				d := k.Time.Format("20060102150405")
-				t := strings.Replace(k.Title, "?", "？", -1)
-				t = strings.Replace(k.Title, "\"", "”", -1)
-				fci.dstname = fmt.Sprintf("[D%d]%s(%s)_%s_%s", k.Drop, k.Keyword, k.Station, d, t)
+				fci.dstname = fmt.Sprintf("[D%d]%s(%s)_%s_%s", k.Drop, k.Keyword, k.Station, d, k.Title)
 				if conf.cFiletype == "TS" {
 					fci.dstname = fci.dstname + ".ts"
 				} else if conf.cFiletype == "MP4" {
