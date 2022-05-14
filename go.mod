@@ -1,4 +1,4 @@
-module github.com/reeve0930/falko
+module github.com/MagicalLiebe/falko
 
 go 1.13
 
