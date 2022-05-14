@@ -219,6 +219,7 @@ func getStationList() stationList {
 	sl = append(sl, station{Name: "BS12トゥエルビ", ID: 129, StType: 1})
 	sl = append(sl, station{Name: "NHK BSプレミアム", ID: 179, StType: 1})
 	sl = append(sl, station{Name: "TOKYO MX2", ID: 187, StType: 0})
+	sl = append(sl, station{Name: "BSJapanext", ID: 273, StType: 1})
 	return sl
 }
 
