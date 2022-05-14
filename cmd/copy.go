@@ -24,8 +24,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/MagicalLiebe/falko/db"
 	"github.com/cheggaaa/pb/v3"
-	"github.com/reeve0930/falko/db"
 	"github.com/spf13/cobra"
 )
 

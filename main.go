@@ -16,7 +16,7 @@ limitations under the License.
 
 package main
 
-import "github.com/reeve0930/falko/cmd"
+import "github.com/MagicalLiebe/falko/cmd"
 
 func main() {
 	cmd.Execute()
