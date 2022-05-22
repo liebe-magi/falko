@@ -124,4 +124,4 @@ rec 1730
 ## License
 
 FALKO for foltia ANIME LOCKER by MagicalLiebe is licensed under the Apache License, Version2.0.  
-See [LICENSE](https://github.com/MagicalLiebe/foltia/blob/master/LICENSE)
+See [LICENSE](https://github.com/MagicalLiebe/falko/blob/master/LICENSE)
