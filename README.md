@@ -18,7 +18,7 @@
 ## インストール方法
 
 ```bash
-% go get github.com/reeve0930/falko
+% go get github.com/MagicalLiebe/falko
 ```
 
 ## 初期設定
@@ -123,5 +123,5 @@ rec 1730
 
 ## License
 
-FALKO for foltia ANIME LOCKER by reeve0930 is licensed under the Apache License, Version2.0.  
-See [LICENSE](https://github.com/reeve0930/foltia/blob/master/LICENSE)
+FALKO for foltia ANIME LOCKER by MagicalLiebe is licensed under the Apache License, Version2.0.  
+See [LICENSE](https://github.com/MagicalLiebe/foltia/blob/master/LICENSE)
