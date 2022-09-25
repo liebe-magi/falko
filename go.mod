@@ -1,6 +1,6 @@
 module github.com/MagicalLiebe/falko
 
-go 1.13
+go 1.19
 
 require (
 	github.com/BurntSushi/toml v0.3.1
