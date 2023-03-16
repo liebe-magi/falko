@@ -4,8 +4,7 @@ go 1.13
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/PuerkitoBio/goquery v1.5.1
-	github.com/andybalholm/cascadia v1.2.0 // indirect
+	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/cheggaaa/pb/v3 v3.0.8
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/jinzhu/gorm v1.9.16
@@ -22,7 +21,5 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.7.0
-	golang.org/x/net v0.0.0-20200707034311-ab3426394381 // indirect
-	golang.org/x/text v0.3.3 // indirect
 	gopkg.in/ini.v1 v1.57.0 // indirect
 )
