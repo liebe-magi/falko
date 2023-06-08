@@ -3,7 +3,7 @@ module github.com/MagicalLiebe/falko
 go 1.13
 
 require (
-	github.com/BurntSushi/toml v0.3.1
+	github.com/BurntSushi/toml v1.3.2
 	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/andybalholm/cascadia v1.2.0 // indirect
 	github.com/cheggaaa/pb/v3 v3.0.8
