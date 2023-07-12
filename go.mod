@@ -6,7 +6,7 @@ require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/andybalholm/cascadia v1.2.0 // indirect
-	github.com/cheggaaa/pb/v3 v3.0.8
+	github.com/cheggaaa/pb/v3 v3.1.4
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/jinzhu/gorm v1.9.16
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
