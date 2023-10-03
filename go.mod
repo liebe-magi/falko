@@ -1,4 +1,4 @@
-module github.com/MagicalLiebe/falko
+module github.com/liebe-magi/falko
 
 go 1.13
 
