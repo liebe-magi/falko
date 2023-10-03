@@ -1,5 +1,5 @@
 /*
-Copyright © 2020 reeve0930 <reeve0930@gmail.com>
+Copyright © 2020 liebe-magi <liebe.magi@gmail.com>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 )
 
-//KeywordRecFile is a struct of video file
+// KeywordRecFile is a struct of video file
 type KeywordRecFile struct {
 	gorm.Model
 	Keyword   string
@@ -43,7 +43,7 @@ type KeywordRecFile struct {
 }
 
 func (v KeywordRecFile) String() string {
-    return fmt.Sprintf("Keyword: %s, Title: %s, PID : %d, Time : %s, Staiton : %s, FileTS : %s, FileMP4HD : %s, FileMP4SD : %s, Drop : %d, Scramble : %d, Copy : %t\n", v.Keyword, v.Title, v.PID, v.Time, v.Station, v.FileTS, v.FileMP4HD, v.FileMP4SD, v.Drop, v.Scramble, v.Copy)
+	return fmt.Sprintf("Keyword: %s, Title: %s, PID : %d, Time : %s, Staiton : %s, FileTS : %s, FileMP4HD : %s, FileMP4SD : %s, Drop : %d, Scramble : %d, Copy : %t\n", v.Keyword, v.Title, v.PID, v.Time, v.Station, v.FileTS, v.FileMP4HD, v.FileMP4SD, v.Drop, v.Scramble, v.Copy)
 }
 
 // InitKeywordRecFileDB : Initialize KeywordRecFile DB
@@ -54,10 +54,10 @@ func InitKeywordRecFileDB() error {
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_keyword.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	db.AutoMigrate(&KeywordRecFile{})
 	return nil
 }
@@ -70,10 +70,10 @@ func InsertKeywordRecFile(keyword string, title string, pid int, filets string, 
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_keyword.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	db.Create(&KeywordRecFile{Keyword: keyword, Title: title, PID: pid, FileTS: filets, FileMP4HD: filemp4hd, FileMP4SD: filemp4sd, Station: station, Time: time, Drop: drop, Scramble: scramble, Copy: cp})
 	return nil
 }
@@ -86,10 +86,10 @@ func UpdateKeywordRecFile(id uint, keyword string, title string, pid int, filets
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_keyword.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	var krf KeywordRecFile
 	db.First(&krf, id)
 	krf.Keyword = keyword
@@ -115,10 +115,10 @@ func DeleteKeywordRecFile(id uint) error {
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_keyword.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	var krf KeywordRecFile
 	db.First(&krf, id)
 	db.Delete(&krf)
@@ -133,10 +133,10 @@ func GetAllKeywordRecFile() ([]KeywordRecFile, error) {
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_keyword.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return []KeywordRecFile{}, err
 	}
+	defer db.Close()
 	var krfl []KeywordRecFile
 	db.Order("created_at desc").Find(&krfl)
 	return krfl, nil
@@ -150,10 +150,10 @@ func GetOneKeywordRecFile(id uint) (KeywordRecFile, error) {
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_keyword.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return KeywordRecFile{}, err
 	}
+	defer db.Close()
 	var krf KeywordRecFile
 	db.First(&krf, id)
 	return krf, nil

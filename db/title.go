@@ -1,5 +1,5 @@
 /*
-Copyright © 2020 reeve0930 <reeve0930@gmail.com>
+Copyright © 2020 liebe-magi <liebe.magi@gmail.com>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 )
 
-//AnimeTitle is a struct of anime title
+// AnimeTitle is a struct of anime title
 type AnimeTitle struct {
 	gorm.Model
 	TID       int
@@ -60,10 +60,10 @@ func InitTitleDB() error {
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_title.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	db.AutoMigrate(&AnimeTitle{})
 	return nil
 }
@@ -76,10 +76,10 @@ func InsertTitle(tid int, title string, yomi string, year int, active bool) erro
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_title.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	db.Create(&AnimeTitle{TID: tid, Title: title, TitleYomi: yomi, Year: year, Active: active})
 	return nil
 }
@@ -92,10 +92,10 @@ func UpdateTitle(id uint, tid int, title string, yomi string, year int, active b
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_title.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	var t AnimeTitle
 	db.First(&t, id)
 	t.TID = tid
@@ -115,10 +115,10 @@ func DeleteTitle(id uint) error {
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_title.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	var t AnimeTitle
 	db.First(&t, id)
 	db.Delete(&t)
@@ -133,10 +133,10 @@ func GetAllTitle() (AnimeTitleList, error) {
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_title.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return AnimeTitleList{}, err
 	}
+	defer db.Close()
 	var tl AnimeTitleList
 	db.Order("created_at desc").Find(&tl)
 	return tl, nil
@@ -150,10 +150,10 @@ func GetOneTitle(id uint) (AnimeTitle, error) {
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_title.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return AnimeTitle{}, err
 	}
+	defer db.Close()
 	var t AnimeTitle
 	db.First(&t, id)
 	return t, nil

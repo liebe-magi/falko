@@ -1,5 +1,5 @@
 /*
-Copyright © 2020 reeve0930 <reeve0930@gmail.com>
+Copyright © 2020 liebe-magi <liebe.magi@gmail.com>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

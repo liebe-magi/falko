@@ -1,5 +1,5 @@
 /*
-Copyright © 2020 reeve0930 <reeve0930@gmail.com>
+Copyright © 2020 liebe-magi <liebe.magi@gmail.com>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 )
 
-//VideoFile is a struct of video file
+// VideoFile is a struct of video file
 type VideoFile struct {
 	gorm.Model
 	TID       int
@@ -53,10 +53,10 @@ func InitVideoFileDB() error {
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_videofile.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	db.AutoMigrate(&VideoFile{})
 	return nil
 }
@@ -69,10 +69,10 @@ func InsertVideoFile(tid int, epnum int, pid int, filets string, filemp4hd strin
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_videofile.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	db.Create(&VideoFile{TID: tid, EpNum: epnum, PID: pid, FileTS: filets, FileMP4HD: filemp4hd, FileMP4SD: filemp4sd, Station: station, Time: time, Drop: drop, Scramble: scramble})
 	return nil
 }
@@ -85,10 +85,10 @@ func UpdateVideoFile(id uint, tid int, epnum int, pid int, filets string, filemp
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_videofile.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	var vf VideoFile
 	db.First(&vf, id)
 	vf.TID = tid
@@ -113,10 +113,10 @@ func DeleteVideoFile(id uint) error {
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_videofile.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	var vf VideoFile
 	db.First(&vf, id)
 	db.Delete(&vf)
@@ -131,10 +131,10 @@ func GetAllVideoFile() ([]VideoFile, error) {
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_videofile.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return []VideoFile{}, err
 	}
+	defer db.Close()
 	var vfl []VideoFile
 	db.Order("created_at desc").Find(&vfl)
 	return vfl, nil
@@ -148,10 +148,10 @@ func GetOneVideoFile(id uint) (VideoFile, error) {
 	}
 	dbPath := filepath.Join(home, ".config", "falko", "foltia_videofile.sqlite3")
 	db, err := gorm.Open("sqlite3", dbPath)
-	defer db.Close()
 	if err != nil {
 		return VideoFile{}, err
 	}
+	defer db.Close()
 	var vf VideoFile
 	db.First(&vf, id)
 	return vf, nil

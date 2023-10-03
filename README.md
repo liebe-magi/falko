@@ -18,14 +18,14 @@
 ## インストール方法
 
 ```bash
-% go get github.com/MagicalLiebe/falko
+% go get github.com/liebe-magi/falko
 ```
 
 ## 初期設定
 
-`falko config`コマンドを実行すると、`~/.config/falko`に`config.toml`ができる。  
-この設定ファイルを直接編集するか、以下のように`falko config`コマンドで一つずつパラメータを設定していく。  
-なお、このコマンドを実行するPCは**foltia ANIME LOCKER**と同一LAN上にある必要がある。  
+`falko config`コマンドを実行すると、`~/.config/falko`に`config.toml`ができる。
+この設定ファイルを直接編集するか、以下のように`falko config`コマンドで一つずつパラメータを設定していく。
+なお、このコマンドを実行するPCは**foltia ANIME LOCKER**と同一LAN上にある必要がある。
 
 ```bash
 # foltia ANIME LOCKERのIPアドレスを設定
@@ -86,19 +86,19 @@
 % falko slack
 ```
 
-以下のような文章が表示されるので、通知して欲しいチャンネルに作成したSlack botを参加させた上で、表示されている4桁の数字を入力する。  
+以下のような文章が表示されるので、通知して欲しいチャンネルに作成したSlack botを参加させた上で、表示されている4桁の数字を入力する。
 
 ```bash
 > 2020/05/27 00:59:55 Slackよりこのコードを入力して下さい:3653
 ```
 
-`認証完了`と表示され、`Slackクライアントスタンバイ完了`となったらOK。  
+`認証完了`と表示され、`Slackクライアントスタンバイ完了`となったらOK。
 指定した時刻に通知が実行される。
 
 ### Slack botからの録画予約
 
-TIDを指定することで録画予約ができる。  
-TIDは新番組の通知に示されている。  
+TIDを指定することで録画予約ができる。
+TIDは新番組の通知に示されている。
 以下の例の場合、**1730**がTID。
 
 ```
@@ -108,7 +108,7 @@ BS11イレブン : 2020/5/30 (土)
 http://cal.syoboi.jp/tid/1730/
 ```
 
-TIDを指定して、以下のようにSlack botにメッセージを送ると録画予約ができる。  
+TIDを指定して、以下のようにSlack botにメッセージを送ると録画予約ができる。
 
 ```
 rec 1730
@@ -123,5 +123,5 @@ rec 1730
 
 ## License
 
-FALKO for foltia ANIME LOCKER by MagicalLiebe is licensed under the Apache License, Version2.0.  
-See [LICENSE](https://github.com/MagicalLiebe/falko/blob/master/LICENSE)
+FALKO for foltia ANIME LOCKER by liebe-magi is licensed under the Apache License, Version2.0.
+See [LICENSE](https://github.com/liebe-magi/falko/blob/master/LICENSE)
