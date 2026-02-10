@@ -8,7 +8,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.10.3
 	github.com/cheggaaa/pb/v3 v3.1.7
 	github.com/jinzhu/gorm v1.9.16
-	github.com/mattn/go-sqlite3 v1.14.33
+	github.com/mattn/go-sqlite3 v1.14.34
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/slack-go/slack v0.17.3
 	github.com/spf13/cobra v1.10.2
