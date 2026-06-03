@@ -2,7 +2,7 @@ module github.com/liebe-magi/falko
 
 go 1.23.0
 
-toolchain go1.26.3
+toolchain go1.26.4
 
 require (
 	github.com/PuerkitoBio/goquery v1.10.3
