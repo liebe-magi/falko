@@ -1,6 +1,6 @@
 module github.com/liebe-magi/falko
 
-go 1.23.0
+go 1.25
 
 toolchain go1.26.4
 
@@ -10,7 +10,7 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/mattn/go-sqlite3 v1.14.45
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/slack-go/slack v0.17.3
+	github.com/slack-go/slack v0.26.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 )
