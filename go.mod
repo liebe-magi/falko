@@ -1,6 +1,6 @@
 module github.com/liebe-magi/falko
 
-go 1.23.0
+go 1.26
 
 toolchain go1.27.2
 
@@ -10,7 +10,7 @@ require (
 	github.com/jinzhu/gorm v1.9.16
 	github.com/mattn/go-sqlite3 v1.14.52
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/slack-go/slack v0.17.3
+	github.com/slack-go/slack v0.30.1
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 )
@@ -350,8 +350,8 @@ require (
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
-	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/stretchr/testify v1.11.1 // indirect
+	github.com/stretchr/objx v0.5.3 // indirect
+	github.com/stretchr/testify v1.12.1 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/substrait-io/substrait-go v0.4.2 // indirect
 	github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926 // indirect
@@ -375,7 +375,7 @@ require (
 	go.uber.org/goleak v1.3.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.40.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
 	golang.org/x/image v0.0.0-20220302094943-723b81ca9867 // indirect
